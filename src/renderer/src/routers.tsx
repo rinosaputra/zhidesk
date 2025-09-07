@@ -1,21 +1,22 @@
 // File: src/renderer/src/routers.tsx
 import { createBrowserRouter } from 'react-router-dom'
 import { ROUTES } from './routes'
-import AppLayout from './pages/_layout'
 
 export const routers = createBrowserRouter([
   {
     path: ROUTES.ROOT.$path(),
-    element: <AppLayout />,
+    lazy: async () => ({
+      Component: (await import('./components/root')).default
+    }),
     errorElement: <div>Error Boundary</div>,
     children: [
-      // // Dashboard
-      // {
-      //   path: ROUTES.DASHBOARD_OVERVIEW.$path(),
-      //   lazy: async () => ({
-      //     Component: (await import('./pages/dashboard/overview')).default
-      //   })
-      // },
+      // Dashboard
+      {
+        path: ROUTES.DASHBOARD_OVERVIEW.$path(),
+        lazy: async () => ({
+          Component: (await import('./pages/dashboard/overview')).default
+        })
+      },
       // {
       //   path: ROUTES.DASHBOARD_ANALYTICS.$path(),
       //   lazy: async () => ({
@@ -23,29 +24,25 @@ export const routers = createBrowserRouter([
       //   })
       // },
 
-      // // Data Management
-      // {
-      //   path: ROUTES.DATA_COLLECTIONS.$path(),
-      //   lazy: async () => ({
-      //     Component: (await import('./pages/data/collections')).default
-      //   })
-      // },
-      // {
-      //   path: ROUTES.DATA_COLLECTION_LIST.$path({
-      //     collectionName: ':collectionName'
-      //   }),
-      //   lazy: async () => ({
-      //     Component: (await import('./pages/data/collection-list')).default
-      //   })
-      // },
-      // {
-      //   path: ROUTES.DATA_COLLECTION_CREATE.$path({
-      //     collectionName: ':collectionName'
-      //   }),
-      //   lazy: async () => ({
-      //     Component: (await import('./pages/data/collection-create')).default
-      //   })
-      // },
+      // Data Management
+      {
+        path: ROUTES.DATA_COLLECTIONS.$path(),
+        lazy: async () => ({
+          Component: (await import('./pages/data/collections')).default
+        })
+      },
+      {
+        path: ROUTES.DATA_COLLECTION_LIST.$path(),
+        lazy: async () => ({
+          Component: (await import('./pages/data/collection-list')).default
+        })
+      },
+      {
+        path: ROUTES.DATA_COLLECTION_CREATE.$path(),
+        lazy: async () => ({
+          Component: (await import('./pages/data/collection-create')).default
+        })
+      },
       // {
       //   path: ROUTES.DATA_COLLECTION_EDIT.$path({
       //     collectionName: ':collectionName',
@@ -117,25 +114,13 @@ export const routers = createBrowserRouter([
       //   })
       // },
 
-      // // Settings
-      // {
-      //   path: ROUTES.SETTINGS_GENERAL.$path(),
-      //   lazy: async () => ({
-      //     Component: (await import('./pages/settings/general')).default
-      //   })
-      // },
-      // {
-      //   path: ROUTES.SETTINGS_DATABASE.$path(),
-      //   lazy: async () => ({
-      //     Component: (await import('./pages/settings/database')).default
-      //   })
-      // },
-      // {
-      //   path: ROUTES.SETTINGS_THEMES.$path(),
-      //   lazy: async () => ({
-      //     Component: (await import('./pages/settings/themes')).default
-      //   })
-      // },
+      // Settings
+      {
+        path: ROUTES.SETTINGS.$path(),
+        lazy: async () => ({
+          Component: (await import('./pages/setting')).default
+        })
+      },
 
       // Root redirect to dashboard
       {

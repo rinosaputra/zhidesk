@@ -75,8 +75,10 @@ const root = route({
       path: 'settings',
       children: {
         general: route({ path: '' }),
+        appearance: route({ path: 'appearance' }),
         database: route({ path: 'database' }),
-        themes: route({ path: 'themes' })
+        notifications: route({ path: 'notifications' }),
+        account: route({ path: 'account' })
       }
     }),
 
@@ -110,8 +112,10 @@ export const ROUTES = {
   REPORTS_GENERATE: root.reports.generate,
   SETTINGS: root.settings,
   SETTINGS_GENERAL: root.settings.general,
+  SETTINGS_APPEARANCE: root.settings.appearance,
   SETTINGS_DATABASE: root.settings.database,
-  SETTINGS_THEMES: root.settings.themes,
+  SETTINGS_NOTIFICATIONS: root.settings.notifications,
+  SETTINGS_ACCOUNT: root.settings.account,
   NOT_FOUND: root.notFound
 }
 

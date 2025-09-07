@@ -4,13 +4,13 @@ import { devtools } from 'zustand/middleware'
 
 interface AppState {
   // UI State
-  sidebarOpen: boolean
+  // sidebarOpen: boolean # disabled
   currentView: string
   loading: boolean
   error: string | null
 
   // Actions
-  setSidebarOpen: (open: boolean) => void
+  // setSidebarOpen: (open: boolean) => void # disabled
   setCurrentView: (view: string) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -21,13 +21,13 @@ export const useAppStore = create<AppState>()(
   devtools(
     (set) => ({
       // Initial state
-      sidebarOpen: true,
+      // sidebarOpen: true, #disabled
       currentView: 'dashboard',
       loading: false,
       error: null,
 
       // Actions
-      setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      // setSidebarOpen: (open) => set({ sidebarOpen: open }), #disabled
       setCurrentView: (view) => set({ currentView: view }),
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
