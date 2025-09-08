@@ -19,11 +19,11 @@
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
     "build:linux": "electron-vite build && electron-builder --linux",
-    "test:zod": "vitest src/schema/collection/__tests__/database-complex.test.ts",
-    "test:zod2": "vitest src/schema/collection/__tests__/database-generator.test.ts",
-    "test:zod3": "vitest src/schema/collection/__tests__/enum-generator.test.ts",
-    "test:zod4": "vitest src/schema/collection/__tests__/validation-constants.test.ts",
-    "test:zod5": "vitest src/schema/collection/__tests__/zod-generator.test.ts"
+    "test:db:column-types": "vitest src/schema/database/__tests__/column-types.test.ts",
+    "test:db:table-simulation": "vitest src/schema/database/__tests__/table-simulation.test.ts",
+    "test:db:error-handling": "vitest src/schema/database/__tests__/error-handling.test.ts",
+    "test:db:service": "vitest src/service/database/__tests__/DatabaseService.test.ts",
+    "test:db:router": "vitest src/service/orpc/database/__tests__/router.test.ts"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -89,6 +89,7 @@
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.0.0",
     "@electron-toolkit/tsconfig": "^1.0.1",
+    "@types/lodash": "^4.17.20",
     "@types/node": "^22.16.5",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",

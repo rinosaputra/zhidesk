@@ -1,7 +1,7 @@
 // File: src/service/orpc/router.ts
 import { os } from '@orpc/server'
 import * as z from 'zod'
-import { CollectionRouter } from './collection.router'
+import { databaseRouter } from './database/router'
 
 // Inisialisasi DocGenerator
 
@@ -26,8 +26,8 @@ export const oRPCRouter = {
       }
     }),
 
-  // ==================== COLLECTION MANAGEMENT ===================
-  collection: CollectionRouter
+  // ==================== DATABASE MANAGEMENT ===================
+  database: databaseRouter
 }
 
 export type oRPCRouter = typeof oRPCRouter
