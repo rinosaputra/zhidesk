@@ -8,6 +8,7 @@ import {
   createObjectField,
   createReferenceField
 } from '../factories'
+import { TableSchema } from '../types'
 
 describe('Database Generator - Error Handling', () => {
   const generator = new DatabaseGenerator()
@@ -21,7 +22,7 @@ describe('Database Generator - Error Handling', () => {
   })
 
   it('should handle invalid field configurations', () => {
-    const invalidTable = createTable({
+    const invalidTable = TableSchema.safeParse({
       name: 'invalid',
       label: 'Invalid Table',
       fields: [
@@ -33,13 +34,11 @@ describe('Database Generator - Error Handling', () => {
       ]
     })
 
-    generator.registerTable(invalidTable)
-
-    expect(() => generator.generateTableSchema('invalid')).toThrow('Unknown field type: undefined')
+    expect(invalidTable.success).toBe(false)
   })
 
   it('should handle enum field without options', () => {
-    const tableWithInvalidEnum = createTable({
+    const tableWithInvalidEnum = TableSchema.safeParse({
       name: 'badEnum',
       label: 'Bad Enum Table',
       fields: [
@@ -52,11 +51,7 @@ describe('Database Generator - Error Handling', () => {
       ]
     })
 
-    generator.registerTable(tableWithInvalidEnum)
-
-    expect(() => generator.generateTableSchema('badEnum')).toThrow(
-      'Enum field must have options array with at least one value'
-    )
+    expect(tableWithInvalidEnum.success).toBe(false)
   })
 
   it('should handle circular references in object fields', () => {

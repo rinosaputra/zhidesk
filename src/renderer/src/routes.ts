@@ -1,6 +1,7 @@
 // File: src/renderer/src/routes.ts
 import { route, string } from 'react-router-typesafe-routes'
 
+// Define base routes dengan path yang benar
 const root = route({
   children: {
     // Dashboard
@@ -12,7 +13,7 @@ const root = route({
       }
     }),
 
-    // Data Management
+    // Data Management - Perbaikan struktur
     data: route({
       path: 'data',
       children: {
@@ -21,7 +22,7 @@ const root = route({
           path: ':collectionName',
           params: { collectionName: string() },
           children: {
-            list: route({ path: '' }),
+            overview: route({ path: '' }), // List view
             create: route({ path: 'create' }),
             edit: route({
               path: ':id/edit',
@@ -82,6 +83,11 @@ const root = route({
       }
     }),
 
+    // Database Studio (Tambahkan route baru)
+    databaseStudio: route({
+      path: 'database-studio'
+    }),
+
     // 404
     notFound: route({ path: '*' })
   }
@@ -93,31 +99,37 @@ export const ROUTES = {
   DASHBOARD: root.dashboard,
   DASHBOARD_OVERVIEW: root.dashboard.overview,
   DASHBOARD_ANALYTICS: root.dashboard.analytics,
+
   DATA: root.data,
   DATA_COLLECTIONS: root.data.collections,
   DATA_COLLECTION: root.data.collection,
-  DATA_COLLECTION_LIST: root.data.collection.list,
+  DATA_COLLECTION_OVERVIEW: root.data.collection.overview,
   DATA_COLLECTION_CREATE: root.data.collection.create,
   DATA_COLLECTION_EDIT: root.data.collection.edit,
   DATA_COLLECTION_VIEW: root.data.collection.view,
+
   FORMS: root.forms,
   FORMS_LIST: root.forms.list,
   FORMS_CREATE: root.forms.create,
   FORMS_EDIT: root.forms.edit,
   FORMS_PREVIEW: root.forms.preview,
+
   REPORTS: root.reports,
   REPORTS_LIST: root.reports.list,
   REPORTS_CREATE: root.reports.create,
   REPORTS_EDIT: root.reports.edit,
   REPORTS_GENERATE: root.reports.generate,
+
   SETTINGS: root.settings,
   SETTINGS_GENERAL: root.settings.general,
   SETTINGS_APPEARANCE: root.settings.appearance,
   SETTINGS_DATABASE: root.settings.database,
   SETTINGS_NOTIFICATIONS: root.settings.notifications,
   SETTINGS_ACCOUNT: root.settings.account,
+
+  DATABASE_STUDIO: root.databaseStudio,
   NOT_FOUND: root.notFound
 }
 
 // Export types
-export type ROUTES = typeof ROUTES
+export type AppRoutes = typeof ROUTES

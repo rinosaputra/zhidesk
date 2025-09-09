@@ -8,7 +8,7 @@ import { queryClient } from './lib/query-client'
 import { RouterProvider } from 'react-router-dom'
 import { DevTools } from './components/devtools'
 import { routers } from './routers'
-import ThemeManajer from './stores/theme.manajer'
+import ThemeManajer from './components/theme/manajer'
 import { Toaster } from './components/ui/sonner'
 
 createRoot(document.getElementById('root')!).render(

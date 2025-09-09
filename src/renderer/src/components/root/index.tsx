@@ -7,18 +7,11 @@ import { SiteHeader } from './site-header'
 
 const Layout: React.FC = () => {
   return (
-    <SidebarProvider
-      style={
-        {
-          '--sidebar-width': 'calc(var(--spacing) * 72)',
-          '--header-height': 'calc(var(--spacing) * 12)'
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
+    <SidebarProvider>
+      <AppSidebar />
       <SidebarInset>
-        <SiteHeader />
-        <main className="flex-1 overflow-auto min-h-[calc(100vh-4rem)]">
+        <SiteHeader className="bg-sidebar" />
+        <main className="flex-1 overflow-auto w-full max-h-(--height-main) bg-sidebar">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <Outlet />
           </div>

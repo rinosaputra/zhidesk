@@ -1,136 +1,145 @@
-# DatabaseService
+# Database Service Documentation
 
-Sebuah service database berbasis file yang menggunakan LowDB dengan fitur schema validation, query operations, dan aggregation pipeline.
+## Overview
 
-## Fitur Utama
+Database Service adalah modul utama Zhidesk yang menyediakan sistem database berbasis JSON dengan fitur lengkap untuk operasi CRUD, query, aggregation, dan validasi schema menggunakan Zod. Modul ini menggunakan LowDB sebagai storage engine dan menyediakan interface yang type-safe melalui ORPC.
 
-- ✅ **Singleton Pattern** - Instance tunggal untuk seluruh aplikasi
-- ✅ **Multiple Databases** - Dukungan multiple databases dengan isolasi data
-- ✅ **Schema Validation** - Validasi data berdasarkan schema yang didefinisikan
-- ✅ **CRUD Operations** - Create, Read, Update, Delete operations
-- ✅ **Query Operations** - Filtering, sorting, pagination
-- ✅ **Aggregation Pipeline** - MongoDB-like aggregation pipeline
-- ✅ **Full-text Search** - Pencarian teks across multiple fields
-- ✅ **Type Safety** - TypeScript support dengan interface yang jelas
+## Architecture
 
-## Instalasi
-
-```bash
-npm install lodash lowdb
-npm install -D @types/lodash
+```
+src/service/database/
+├── types.ts          # Schema Zod dan type definitions
+├── factories.ts      # Factory functions untuk membuat field dan table
+├── generator.ts      # DatabaseGenerator untuk schema generation dan validation
+├── service.ts        # DatabaseService - core implementation
+├── router.ts         # ORPC router endpoints
+├── examples.ts       # Contoh table configurations
+└── README.md         # Dokumentasi ini
 ```
 
-## Penggunaan Dasar
+## Core Components
 
-### Inisialisasi Database
+### 1. Types & Schemas (`types.ts`)
 
-```typescript
-import { DatabaseService } from './src/service/database'
+Mendefinisikan semua Zod schemas dan TypeScript types untuk:
 
-const databaseService = DatabaseService.getInstance()
+- Field types (String, Number, Boolean, Date, Enum, Reference, Array, Object)
+- Table configuration
+- Database metadata
+- Input/Output schemas untuk ORPC operations
+- Aggregation stages
 
-// Inisialisasi database baru
-await databaseService.initializeDatabase('my-db', 'My Database', [
-  {
-    name: 'users',
-    fields: [
-      { name: 'name', type: 'string', required: true },
-      { name: 'email', type: 'string', required: true },
-      { name: 'age', type: 'number' }
-    ]
-  }
-])
-```
+### 2. Factory Functions (`factories.ts`)
 
-### CRUD Operations
+Helper functions untuk membuat field dan table configurations dengan type safety:
 
 ```typescript
-// Create
-const user = await databaseService.create('my-db', 'users', {
-  name: 'John Doe',
-  email: 'john@example.com',
-  age: 30
+// Contoh penggunaan factories
+const userTable = createTable({
+  name: 'users',
+  label: 'Users',
+  fields: [
+    createStringField({
+      name: 'email',
+      label: 'Email',
+      required: true,
+      validation: { format: 'email' }
+    }),
+    createNumberField({
+      name: 'age',
+      label: 'Age',
+      validation: { min: 0 }
+    })
+  ]
 })
-
-// Read
-const users = await databaseService.find('my-db', 'users', { age: { $gt: 25 } })
-const user = await databaseService.findOne('my-db', 'users', { email: 'john@example.com' })
-
-// Update
-const updatedUser = await databaseService.update('my-db', 'users', 'user-id', { age: 31 })
-
-// Delete
-const deleted = await databaseService.delete('my-db', 'users', 'user-id')
 ```
 
-### Query Operations
+### 3. Database Generator (`generator.ts`)
+
+Class untuk generate Zod schemas dari table configuration dan validasi data:
 
 ```typescript
-// Dengan pagination dan sorting
-const results = await databaseService.find(
-  'my-db',
-  'users',
-  { department: 'IT' },
-  {
-    skip: 0,
-    limit: 10,
-    sort: { name: 1, age: -1 }
-  }
-)
+const generator = new DatabaseGenerator()
+generator.registerTable(userTable)
 
-// Pencarian teks
-const searchResults = await databaseService.search('my-db', 'users', 'john', [
-  'name',
-  'email',
-  'department'
-])
+// Generate schema untuk validasi
+const userSchema = generator.generateTableSchema('users')
 
-// Aggregation
-const pipeline = [
-  { $match: { status: 'active' } },
-  {
-    $group: {
-      _id: '$department',
-      total: { $sum: 1 },
-      avgAge: { $avg: '$age' }
-    }
-  }
-]
+// Extract default values
+const defaults = generator.extractDefaults('users')
 
-const aggregationResult = await databaseService.aggregate('my-db', 'users', pipeline)
+// Validasi data
+const validatedData = generator.validateData('users', userData)
 ```
 
-## API Reference
+### 4. Database Service (`service.ts`)
 
-### Database Management
+Singleton class yang mengelola semua operasi database:
 
-- `initializeDatabase(databaseId: string, databaseName: string, tables: any[])`: Inisialisasi database baru
-- `databaseExists(databaseId: string)`: Cek apakah database exists
-- `getAllDatabases()`: Get semua databases yang terdaftar
-- `closeDatabase(databaseId: string)`: Tutup koneksi database
+```typescript
+const db = DatabaseService.getInstance()
+
+// Initialize database
+await db.initializeDatabase('my-db', 'My Database', [userTable, postTable])
+
+// CRUD operations
+await db.create('my-db', 'users', { email: 'user@example.com', age: 25 })
+const users = await db.find('my-db', 'users', { age: { $gt: 20 } })
+```
+
+### 5. ORPC Router (`router.ts`)
+
+Endpoint ORPC untuk komunikasi antara main process dan renderer:
+
+```typescript
+// Contoh pemanggilan dari renderer
+const result = await orpc.database.find.call({
+  databaseId: 'my-db',
+  tableName: 'users',
+  query: { age: { $gt: 20 } }
+})
+```
+
+## Field Types Supported
+
+### Basic Fields
+
+- **String**: Text data dengan validasi email, URL, UUID, etc.
+- **Number**: Numeric data dengan validasi min/max, integer, positive
+- **Boolean**: True/false values
+- **Date**: Date values dengan validasi past/future
+- **Enum**: Predefined options
+
+### Complex Fields
+
+- **Reference**: Relationship ke table lain
+- **Array**: List of items (bisa nested)
+- **Object**: Structured data dengan nested fields
+
+## Operations
 
 ### CRUD Operations
 
-- `create(databaseId: string, tableName: string, data: any)`: Create document baru
-- `createMany(databaseId: string, tableName: string, items: any[])`: Create multiple documents
-- `find(databaseId: string, tableName: string, query: any, options?: any)`: Find documents dengan query
-- `findOne(databaseId: string, tableName: string, query: any)`: Find single document
-- `findById(databaseId: string, tableName: string, id: string)`: Find document by ID
-- `update(databaseId: string, tableName: string, id: string, data: any)`: Update document
-- `updateMany(databaseId: string, tableName: string, query: any, update: any)`: Update multiple documents
-- `delete(databaseId: string, tableName: string, id: string)`: Delete document
-- `deleteMany(databaseId: string, tableName: string, query: any)`: Delete multiple documents
+- `create()` - Insert single document
+- `createMany()` - Insert multiple documents
+- `find()` - Query documents dengan filter
+- `findOne()` - Find single document
+- `findById()` - Find by ID
+- `update()` - Update single document
+- `updateMany()` - Update multiple documents
+- `delete()` - Delete single document (soft/hard delete)
+- `deleteMany()` - Delete multiple documents
 
 ### Query Operations
 
-- `count(databaseId: string, tableName: string, query: any)`: Count documents
-- `distinct(databaseId: string, tableName: string, field: string, query: any)`: Get distinct values
-- `exists(databaseId: string, tableName: string, query: any)`: Check if document exists
-- `search(databaseId: string, tableName: string, searchTerm: string, fields: string[], options?: any)`: Full-text search
+- `count()` - Count documents matching query
+- `distinct()` - Get distinct values for field
+- `exists()` - Check if document exists
+- `search()` - Full-text search across multiple fields
 
-### Aggregation Pipeline
+### Aggregation Operations
 
-Supported stages:
+Support MongoDB-like aggregation pipeline:
 
 - `$match` - Filter documents
 - `$group` - Group documents
@@ -139,148 +148,219 @@ Supported stages:
 - `$skip` - Skip documents
 - `$limit` - Limit documents
 - `$unwind` - Unwind arrays
-- `$lookup` - Join collections
+- `$lookup` - Join with other collections
 - `$addFields` - Add computed fields
 
-Supported operators dalam `$group`:
+## Validation Features
 
-- `$sum` - Sum values
-- `$avg` - Average values
-- `$min` - Minimum value
-- `$max` - Maximum value
-- `$push` - Push to array
-- `$addToSet` - Add to set
-- `$first` - First value
-- `$last` - Last value
-- `$count` - Count documents
-
-## Schema Definition
+### Field-level Validation
 
 ```typescript
-const userTable = {
+createStringField({
+  name: 'email',
+  validation: {
+    format: 'email',
+    min: 5,
+    max: 255,
+    pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
+  }
+})
+```
+
+### Table-level Validation
+
+```typescript
+createTable({
   name: 'users',
-  fields: [
-    { name: '_id', type: 'string', required: true },
-    { name: 'name', type: 'string', required: true },
-    { name: 'email', type: 'string', required: true, unique: true },
-    { name: 'age', type: 'number', min: 0, max: 150 },
-    { name: 'department', type: 'string', enum: ['IT', 'HR', 'Finance'] },
-    { name: 'isActive', type: 'boolean', default: true },
-    { name: 'createdAt', type: 'date', default: () => new Date() },
-    { name: 'updatedAt', type: 'date' }
-  ],
-  indexes: [{ fields: ['email'], unique: true }, { fields: ['department', 'isActive'] }],
-  softDelete: true
-}
+  validation: {
+    strict: true, // Tidak allow additional properties
+    additionalProperties: false
+  }
+})
 ```
 
-## Konfigurasi
+## Example Usage
 
-### Base Data Path
-
-Secara default, data disimpan di folder `data/`. Anda bisa mengubahnya dengan mengakses property private:
+### 1. Initialize Database
 
 ```typescript
-// @ts-ignore
-databaseService.baseDataPath = '/custom/data/path'
+import { DatabaseService } from './service'
+import { exampleUserTable, examplePostTable } from './examples'
+
+const db = DatabaseService.getInstance()
+await db.initializeDatabase('my-app', 'My Application', [exampleUserTable, examplePostTable])
 ```
 
-### Default Tables
+### 2. Create Document
 
-Secara otomatis, setiap database akan memiliki tables:
+```typescript
+const user = await db.create('my-app', 'users', {
+  email: 'john@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  role: 'user',
+  isActive: true
+})
+```
 
-- `users` - User table dengan basic fields
-- `posts` - Post table untuk contoh
+### 3. Query Documents
+
+```typescript
+// Find active users
+const activeUsers = await db.find('my-app', 'users', {
+  isActive: true,
+  role: 'user'
+})
+
+// Search with full-text
+const results = await db.search('my-app', 'users', 'john', ['firstName', 'lastName', 'email'])
+```
+
+### 4. Aggregation
+
+```typescript
+const pipeline = [
+  { $match: { isActive: true } },
+  {
+    $group: {
+      _id: '$role',
+      count: { $sum: 1 },
+      averageAge: { $avg: '$age' }
+    }
+  },
+  { $sort: { count: -1 } }
+]
+
+const stats = await db.aggregate('my-app', 'users', pipeline)
+```
 
 ## Error Handling
 
-Service ini melempar error dengan message yang jelas:
+Semua operations return response dengan format:
 
 ```typescript
-try {
-  await databaseService.create('my-db', 'users', {})
-} catch (error) {
-  console.error('Error:', error.message)
-  // Contoh error: "Name is required", "Database my-db not initialized", dll.
+{
+  success: boolean;
+  error?: string;
+  // ... data lainnya
 }
 ```
 
-## Performance Considerations
+Handle errors dengan proper error checking:
 
-- **File-based**: Cocok untuk development dan small-scale applications
-- **In-memory operations**: Semua operations dilakukan di memory untuk kecepatan
-- **Automatic persistence**: Data secara otomatis disimpan ke file setelah operations
-- **Batching**: Gunakan `createMany` untuk bulk operations
+```typescript
+const result = await db.find('my-app', 'users', query)
+if (!result.success) {
+  console.error('Error:', result.error)
+  // Handle error
+}
+```
 
-## Batasan
+## Best Practices
 
-- Tidak designed untuk high-throughput production environments
-- Tidak support transactions ACID
-- Limited scalability untuk very large datasets
-- File locking sederhana (potensi race conditions pada concurrent writes)
+### 1. Database Initialization
+
+```typescript
+// Check jika database sudah ada sebelum initialize
+const exists = await db.databaseExists('my-app')
+if (!exists) {
+  await db.initializeDatabase('my-app', 'My App', tables)
+}
+```
+
+### 2. Validation
+
+```typescript
+// Selalu validate data sebelum operasi
+try {
+  const validated = generator.validateData('users', data)
+  await db.create('my-app', 'users', validated)
+} catch (error) {
+  // Handle validation error
+}
+```
+
+### 3. Error Handling
+
+```typescript
+// Gunakan try-catch untuk operations yang critical
+try {
+  const result = await db.update('my-app', 'users', id, updateData)
+  if (!result.success) {
+    throw new Error(result.error)
+  }
+} catch (error) {
+  // Handle error appropriately
+}
+```
+
+### 4. Performance
+
+- Gunakan indexing untuk field yang sering di-query
+- Gunakan projection untuk hanya mengambil field yang diperlukan
+- Batasi hasil query dengan `limit` untuk large datasets
 
 ## Testing
 
-```bash
-# Run tests
-npm test
-
-# Run tests dengan coverage
-npm run test:coverage
-
-# Run tests dalam watch mode
-npm run test:watch
-```
-
-## Contoh Lengkap
+Test modul database dengan Vitest:
 
 ```typescript
-import { DatabaseService } from './src/service/database'
+import { describe, it, expect } from 'vitest'
+import { DatabaseService } from './service'
 
-async function example() {
-  const dbService = DatabaseService.getInstance()
-
-  // Initialize database
-  await dbService.initializeDatabase('company', 'Company Database', [
-    {
-      name: 'employees',
-      fields: [
-        { name: 'name', type: 'string', required: true },
-        { name: 'email', type: 'string', required: true },
-        { name: 'department', type: 'string', required: true },
-        { name: 'salary', type: 'number', min: 0 }
-      ]
-    }
-  ])
-
-  // Create employees
-  await dbService.createMany('company', 'employees', [
-    { name: 'Alice', email: 'alice@company.com', department: 'Engineering', salary: 80000 },
-    { name: 'Bob', email: 'bob@company.com', department: 'Marketing', salary: 70000 },
-    { name: 'Charlie', email: 'charlie@company.com', department: 'Engineering', salary: 90000 }
-  ])
-
-  // Query data
-  const engineers = await dbService.find('company', 'employees', { department: 'Engineering' })
-
-  // Aggregation
-  const departmentStats = await dbService.aggregate('company', 'employees', [
-    {
-      $group: {
-        _id: '$department',
-        averageSalary: { $avg: '$salary' },
-        employeeCount: { $sum: 1 }
-      }
-    },
-    { $sort: { averageSalary: -1 } }
-  ])
-
-  console.log(departmentStats)
-}
-
-example().catch(console.error)
+describe('DatabaseService', () => {
+  it('should initialize database', async () => {
+    const db = DatabaseService.getInstance()
+    await db.initializeDatabase('test', 'Test DB', [])
+    expect(await db.databaseExists('test')).toBe(true)
+  })
+})
 ```
 
-## License
+## Backup & Restore
 
-MIT License - bebas untuk digunakan dalam project komersial dan open source.
+Gunakan ORPC utilities untuk backup/restore:
+
+```typescript
+// Backup database
+await orpc.utils.backup.call({ databaseId: 'my-app' })
+
+// Restore database
+await orpc.utils.restore.call({ databaseId: 'my-app', backupData })
+```
+
+## Integration dengan ORPC
+
+Semua operations tersedia melalui ORPC router:
+
+```typescript
+// Dari renderer process
+const response = await orpc.database.find.call({
+  databaseId: 'my-app',
+  tableName: 'users',
+  query: { isActive: true }
+})
+
+if (response.success) {
+  const users = response.documents
+  // Process data
+}
+```
+
+## Limitations
+
+1. **File-based**: Storage menggunakan JSON files, tidak suitable untuk very large datasets
+2. **In-memory**: Data di-load ke memory, perlu consider memory usage untuk large datasets
+3. **Single process**: Tidak support concurrent writes dari multiple processes
+
+## Future Enhancements
+
+1. **Indexing**: Support untuk advanced indexing strategies
+2. **Transactions**: Atomic operations across multiple collections
+3. **Migration**: Schema migration utilities
+4. **Replication**: Multi-database replication
+5. **Caching**: Query result caching untuk performance
+
+---
+
+Untuk pertanyaan atau issues, refer ke contoh di `examples.ts` atau buat issue di repository.

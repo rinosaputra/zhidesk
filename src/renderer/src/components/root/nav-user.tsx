@@ -17,7 +17,6 @@ import {
   SidebarMenuItem,
   useSidebar
 } from '@renderer/components/ui/sidebar'
-import { useAuthStore } from '@renderer/stores/auth.store'
 
 export const NavUser: React.FC<{
   user: {
@@ -27,7 +26,6 @@ export const NavUser: React.FC<{
   }
 }> = ({ user }) => {
   const { isMobile } = useSidebar()
-  const { logout } = useAuthStore()
 
   return (
     <SidebarMenu>
@@ -97,7 +95,7 @@ export const NavUser: React.FC<{
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout}>
+            <DropdownMenuItem onClick={() => {}}>
               <LogOut className="size-4 mr-2" />
               Log out
             </DropdownMenuItem>

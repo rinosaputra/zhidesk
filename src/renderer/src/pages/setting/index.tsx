@@ -32,7 +32,7 @@ import {
   Download,
   Upload
 } from 'lucide-react'
-import useThemeStore from '@renderer/stores/theme.store'
+import useThemeStore from '@renderer/components/theme/store'
 
 const SelectTheme: React.FC = () => {
   const { setTheme, theme } = useThemeStore()

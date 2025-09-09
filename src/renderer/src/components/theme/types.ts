@@ -1,4 +1,4 @@
-// File: src/renderer/src/stores/theme.types.ts
+// File: src/renderer/src/components/theme/types.ts
 export const Themes = {
   system: 'system',
   light: 'light',

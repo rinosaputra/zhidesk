@@ -1,4 +1,4 @@
-// File: src/schema/database/factories.ts
+// File: src/service/database/factories.ts
 import {
   StringField,
   NumberField,
@@ -8,7 +8,8 @@ import {
   ReferenceField,
   ArrayField,
   ObjectField,
-  Table
+  Table,
+  TableSchema
 } from './types'
 
 // Field factory functions
@@ -53,4 +54,4 @@ export const createObjectField = (config: Omit<ObjectField, 'type'>): ObjectFiel
 })
 
 // Table factory function
-export const createTable = (config: Table): Table => config
+export const createTable = (config: Table): Table => TableSchema.parse(config)

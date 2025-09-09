@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { databaseRouter } from '../router'
-import { DatabaseService } from '@service/database'
-import { z } from 'zod'
+import { DatabaseService } from '../service'
 import { call, ORPCError } from '@orpc/server'
+import { examplePostTable, exampleUserTable } from '../examples'
 
 // Mock DatabaseService yang lebih akurat
-vi.mock('@service/database', () => {
+vi.mock('../service', () => {
   const mockDbInstance = {
     // Database Management
     getAllDatabases: vi.fn(),
@@ -108,14 +108,14 @@ describe('Database Router', () => {
       const invalidInput = { databaseId: '' }
 
       // Diperbaiki: Gunakan call() untuk testing validation
-      await expect(call(databaseRouter.databaseExists, invalidInput)).rejects.toThrow(z.ZodError)
+      await expect(call(databaseRouter.databaseExists, invalidInput)).rejects.toThrow(ORPCError)
     })
 
     it('should initialize database successfully', async () => {
       const input = {
         databaseId: 'test-db',
         databaseName: 'Test Database',
-        tables: [{ name: 'users' }]
+        tables: [exampleUserTable]
       }
       mockDb.initializeDatabase.mockResolvedValue(undefined)
 
@@ -141,12 +141,11 @@ describe('Database Router', () => {
   describe('Table Operations', () => {
     it('should get all tables successfully', async () => {
       const input = { databaseId: 'test-db' }
-      const mockTables = [{ name: 'users' }, { name: 'products' }]
+      const mockTables = [exampleUserTable, examplePostTable]
       mockDb.getAllDatabaseTables.mockReturnValue(mockTables)
 
       // Diperbaiki: Gunakan call() dengan input
       const result = await call(databaseRouter.getTables, input)
-
       expect(result).toEqual({
         success: true,
         tables: mockTables
@@ -155,16 +154,15 @@ describe('Database Router', () => {
     })
 
     it('should get table schema successfully', async () => {
-      const input = { databaseId: 'test-db', tableName: 'users' }
-      const mockSchema = { fields: [{ name: 'id', type: 'string' }] }
-      mockDb.getTableSchema.mockReturnValue(mockSchema)
+      const input = { databaseId: 'test-db', tableName: exampleUserTable.name }
+      mockDb.getTableSchema.mockReturnValue(exampleUserTable)
 
       // Diperbaiki: Gunakan call() dengan input
       const result = await call(databaseRouter.getTableSchema, input)
 
       expect(result).toEqual({
         success: true,
-        schema: mockSchema
+        schema: exampleUserTable
       })
       expect(mockDb.getTableSchema).toHaveBeenCalledWith(input.databaseId, input.tableName)
     })
@@ -497,13 +495,12 @@ describe('Database Router', () => {
     })
 
     it('should create table successfully', async () => {
-      const input = {
-        databaseId: 'test-db',
-        tableConfig: { name: 'users', fields: [] }
-      }
       mockDb.createDatabaseTable.mockResolvedValue(true)
 
-      const result = await call(databaseRouter.createTable, input)
+      const result = await call(databaseRouter.createTable, {
+        databaseId: 'test-db',
+        tableConfig: exampleUserTable
+      })
 
       expect(result).toEqual({
         success: true

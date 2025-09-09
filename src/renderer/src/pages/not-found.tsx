@@ -4,13 +4,11 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { AlertCircle, Home, ArrowLeft, Search, Mail } from 'lucide-react'
-import { useAppStore } from '../stores/app.store'
 import { ROUTES } from '../routes'
 
 const NotFoundPage: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { setLoading } = useAppStore()
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-blue-50/50 to-muted/50 p-4">
@@ -50,9 +48,7 @@ const NotFoundPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Button
                   onClick={() => {
-                    setLoading(true)
                     navigate(-1)
-                    setTimeout(() => setLoading(false), 500)
                   }}
                   variant="outline"
                   className="h-14 flex flex-col gap-1"
@@ -63,9 +59,7 @@ const NotFoundPage: React.FC = () => {
 
                 <Button
                   onClick={() => {
-                    setLoading(true)
                     navigate(ROUTES.DASHBOARD_OVERVIEW.$path())
-                    setTimeout(() => setLoading(false), 500)
                   }}
                   className="h-14 flex flex-col gap-1"
                 >

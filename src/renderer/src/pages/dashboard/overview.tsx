@@ -15,18 +15,17 @@ import {
   TrendingUp,
   Download
 } from 'lucide-react'
-import { useAppStore } from '../../stores/app.store'
-import { useDataStore } from '../../stores/data.store'
-import { useFormBuilderStore } from '../../stores/form-builder.store'
-import { useReportBuilderStore } from '../../stores/report-builder.store'
 import { ROUTES } from '../../routes'
 
+const collections = []
+const forms = []
+const reports = []
 const DashboardOverview: React.FC = () => {
   const navigate = useNavigate()
-  const { setLoading } = useAppStore()
-  const { collections } = useDataStore()
-  const { forms } = useFormBuilderStore()
-  const { reports } = useReportBuilderStore()
+  // const { setLoading } = useAppStore()
+  // const { collections } = useDataStore()
+  // const { forms } = useFormBuilderStore()
+  // const { reports } = useReportBuilderStore()
 
   // Stats data
   const stats = [
@@ -127,9 +126,7 @@ const DashboardOverview: React.FC = () => {
   ]
 
   const handleNavigation = (path: string): void => {
-    setLoading(true)
     navigate(path)
-    setTimeout(() => setLoading(false), 300)
   }
 
   return (

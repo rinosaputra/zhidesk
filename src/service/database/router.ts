@@ -1,30 +1,61 @@
-// File: src/service/orpc/database/router.ts
+// File: src/service/database/router.ts
 import { os } from '@orpc/server'
-import * as z from 'zod'
-import { DatabaseService } from '@service/database'
+import { DatabaseService } from './service'
 import {
-  databaseId,
-  tableName,
-  documentId,
-  queryOptions,
-  searchOptions,
-  tableConfig,
-  aggregationStage,
-  databaseListResponse,
-  existenceResponse,
-  countResponse,
-  documentResponse,
-  documentsResponse,
-  distinctResponse,
-  aggregationResponse,
-  schemaResponse,
-  operationResponse
+  // Input schemas
+  databaseExistsInput,
+  initializeDatabaseInput,
+  closeDatabaseInput,
+  getTablesInput,
+  getTableSchemaInput,
+  createTableInput,
+  getDatabaseSchemaInput,
+  findInput,
+  findOneInput,
+  findByIdInput,
+  createInput,
+  createManyInput,
+  updateInput,
+  updateManyInput,
+  deleteInput,
+  deleteManyInput,
+  countInput,
+  distinctInput,
+  existsInput,
+  searchInput,
+  aggregateInput,
+  findByFieldInput,
+
+  // Output schemas
+  getAllDatabasesOutput,
+  databaseExistsOutput,
+  initializeDatabaseOutput,
+  closeDatabaseOutput,
+  getTablesOutput,
+  getTableSchemaOutput,
+  createTableOutput,
+  getDatabaseSchemaOutput,
+  findOutput,
+  findOneOutput,
+  findByIdOutput,
+  createOutput,
+  createManyOutput,
+  updateOutput,
+  updateManyOutput,
+  deleteOutput,
+  deleteManyOutput,
+  countOutput,
+  distinctOutput,
+  existsOutput,
+  searchOutput,
+  aggregateOutput,
+  findByFieldOutput
 } from './types'
 
 export const databaseRouter = {
   // ==================== DATABASE MANAGEMENT ====================
 
-  getAllDatabases: os.output(databaseListResponse).handler(async () => {
+  getAllDatabases: os.output(getAllDatabasesOutput).handler(async () => {
     try {
       const db = DatabaseService.getInstance()
       const databases = await db.getAllDatabases()
@@ -42,8 +73,8 @@ export const databaseRouter = {
   }),
 
   databaseExists: os
-    .input(z.object({ databaseId }))
-    .output(existenceResponse)
+    .input(databaseExistsInput)
+    .output(databaseExistsOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -62,14 +93,8 @@ export const databaseRouter = {
     }),
 
   initializeDatabase: os
-    .input(
-      z.object({
-        databaseId,
-        databaseName: z.string().min(1, 'Database name is required'),
-        tables: z.array(tableConfig).optional()
-      })
-    )
-    .output(operationResponse)
+    .input(initializeDatabaseInput)
+    .output(initializeDatabaseOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -86,8 +111,8 @@ export const databaseRouter = {
     }),
 
   closeDatabase: os
-    .input(z.object({ databaseId }))
-    .output(operationResponse)
+    .input(closeDatabaseInput)
+    .output(closeDatabaseOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -106,16 +131,15 @@ export const databaseRouter = {
   // ==================== TABLE OPERATIONS ====================
 
   getTables: os
-    .input(z.object({ databaseId }))
-    .output(schemaResponse.extend({ tables: z.array(z.any()).optional() }))
+    .input(getTablesInput)
+    .output(getTablesOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
         const tables = db.getAllDatabaseTables(input.databaseId)
         return {
           success: true,
-          tables,
-          schema: tables
+          tables
         }
       } catch (error) {
         return {
@@ -127,8 +151,8 @@ export const databaseRouter = {
     }),
 
   getTableSchema: os
-    .input(z.object({ databaseId, tableName }))
-    .output(schemaResponse)
+    .input(getTableSchemaInput)
+    .output(getTableSchemaOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -146,8 +170,8 @@ export const databaseRouter = {
     }),
 
   createTable: os
-    .input(z.object({ databaseId, tableConfig }))
-    .output(operationResponse)
+    .input(createTableInput)
+    .output(createTableOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -165,12 +189,11 @@ export const databaseRouter = {
     }),
 
   getDatabaseSchema: os
-    .input(z.object({ databaseId }))
-    .output(schemaResponse)
+    .input(getDatabaseSchemaInput)
+    .output(getDatabaseSchemaOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
-        // const schema = db.getDatabaseDatabaseSchema(input.databaseId)
         const tables = db.getAllDatabaseTables(input.databaseId) ?? []
         return {
           success: true,
@@ -189,15 +212,8 @@ export const databaseRouter = {
   // ==================== DATA OPERATIONS ====================
 
   find: os
-    .input(
-      z.object({
-        databaseId,
-        tableName,
-        query: z.any().optional(),
-        options: queryOptions.optional()
-      })
-    )
-    .output(documentsResponse)
+    .input(findInput)
+    .output(findOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -221,14 +237,8 @@ export const databaseRouter = {
     }),
 
   findOne: os
-    .input(
-      z.object({
-        databaseId,
-        tableName,
-        query: z.any().optional()
-      })
-    )
-    .output(documentResponse)
+    .input(findOneInput)
+    .output(findOneOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -247,8 +257,8 @@ export const databaseRouter = {
     }),
 
   findById: os
-    .input(z.object({ databaseId, tableName, id: documentId }))
-    .output(documentResponse)
+    .input(findByIdInput)
+    .output(findByIdOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -267,8 +277,8 @@ export const databaseRouter = {
     }),
 
   create: os
-    .input(z.object({ databaseId, tableName, data: z.any() }))
-    .output(documentResponse)
+    .input(createInput)
+    .output(createOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -286,8 +296,8 @@ export const databaseRouter = {
     }),
 
   createMany: os
-    .input(z.object({ databaseId, tableName, data: z.array(z.any()) }))
-    .output(documentsResponse)
+    .input(createManyInput)
+    .output(createManyOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -305,8 +315,8 @@ export const databaseRouter = {
     }),
 
   update: os
-    .input(z.object({ databaseId, tableName, id: documentId, data: z.any() }))
-    .output(documentResponse)
+    .input(updateInput)
+    .output(updateOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -324,8 +334,8 @@ export const databaseRouter = {
     }),
 
   updateMany: os
-    .input(z.object({ databaseId, tableName, query: z.any(), data: z.any() }))
-    .output(operationResponse.extend({ count: z.number().optional() }))
+    .input(updateManyInput)
+    .output(updateManyOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -348,8 +358,8 @@ export const databaseRouter = {
     }),
 
   delete: os
-    .input(z.object({ databaseId, tableName, id: documentId }))
-    .output(operationResponse.extend({ deleted: z.boolean().optional() }))
+    .input(deleteInput)
+    .output(deleteOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -367,8 +377,8 @@ export const databaseRouter = {
     }),
 
   deleteMany: os
-    .input(z.object({ databaseId, tableName, query: z.any() }))
-    .output(operationResponse.extend({ count: z.number().optional() }))
+    .input(deleteManyInput)
+    .output(deleteManyOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -388,8 +398,8 @@ export const databaseRouter = {
   // ==================== QUERY OPERATIONS ====================
 
   count: os
-    .input(z.object({ databaseId, tableName, query: z.any().optional() }))
-    .output(countResponse)
+    .input(countInput)
+    .output(countOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -408,15 +418,8 @@ export const databaseRouter = {
     }),
 
   distinct: os
-    .input(
-      z.object({
-        databaseId,
-        tableName,
-        field: z.string().min(1, 'Field name is required'),
-        query: z.any().optional()
-      })
-    )
-    .output(distinctResponse)
+    .input(distinctInput)
+    .output(distinctOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -440,8 +443,8 @@ export const databaseRouter = {
     }),
 
   exists: os
-    .input(z.object({ databaseId, tableName, query: z.any() }))
-    .output(existenceResponse)
+    .input(existsInput)
+    .output(existsOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -460,16 +463,8 @@ export const databaseRouter = {
     }),
 
   search: os
-    .input(
-      z.object({
-        databaseId,
-        tableName,
-        searchTerm: z.string().min(1, 'Search term is required'),
-        fields: z.array(z.string()).min(1, 'At least one field is required'),
-        options: searchOptions.optional()
-      })
-    )
-    .output(documentsResponse)
+    .input(searchInput)
+    .output(searchOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -496,14 +491,8 @@ export const databaseRouter = {
   // ==================== AGGREGATION OPERATIONS ====================
 
   aggregate: os
-    .input(
-      z.object({
-        databaseId,
-        tableName,
-        pipeline: z.array(aggregationStage)
-      })
-    )
-    .output(aggregationResponse)
+    .input(aggregateInput)
+    .output(aggregateOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
@@ -524,19 +513,11 @@ export const databaseRouter = {
   // ==================== UTILITY OPERATIONS ====================
 
   findByField: os
-    .input(
-      z.object({
-        databaseId,
-        tableName,
-        field: z.string().min(1, 'Field name is required'),
-        value: z.any()
-      })
-    )
-    .output(documentsResponse)
+    .input(findByFieldInput)
+    .output(findByFieldOutput)
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
-        // Note: findByField method perlu ditambahkan ke DatabaseService
         const documents = await db.findByField(
           input.databaseId,
           input.tableName,

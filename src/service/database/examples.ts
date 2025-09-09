@@ -1,4 +1,4 @@
-// File: src/schema/database/examples.ts
+// File: src/service/database/examples.ts
 import {
   createArrayField,
   createBooleanField,

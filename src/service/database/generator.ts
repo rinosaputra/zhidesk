@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// File: src/schema/database/generator.ts
+// File: src/service/database/generator.ts
 import { z } from 'zod'
 import {
   Field,
@@ -200,11 +200,11 @@ export class DatabaseGenerator {
       throw new Error('Enum field must have options array with at least one value')
     }
 
-    return this.applyFieldModifiers(z.enum(field.options), field)
+    return this.applyFieldModifiers(z.enum(field.options.map((e) => e.value)), field)
   }
 
-  private generateReferenceSchema(field: ReferenceField): z.ZodString {
-    let schema = z.string().uuid()
+  private generateReferenceSchema(field: ReferenceField): z.ZodUUID {
+    let schema = z.uuid()
 
     if (field.validation?.required) {
       schema = schema.min(1, 'Reference ID is required')

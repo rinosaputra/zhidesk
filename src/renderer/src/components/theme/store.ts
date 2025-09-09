@@ -1,7 +1,7 @@
-// File: src/renderer/src/store/theme.store.ts
+// File: src/renderer/src/components/theme/store.ts
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { Themes } from './theme.types'
+import { Themes } from './types'
 
 interface ThemeState {
   theme: Themes

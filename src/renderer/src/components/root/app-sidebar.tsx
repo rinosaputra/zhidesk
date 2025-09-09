@@ -12,7 +12,8 @@ import {
   FileCode,
   Brain,
   MessageSquare,
-  Zap
+  Zap,
+  LayoutGrid
 } from 'lucide-react'
 
 import { NavDocuments } from './nav-documents'
@@ -28,8 +29,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from '@renderer/components/ui/sidebar'
-import { useAuthStore } from '@renderer/stores/auth.store'
 import { Link } from 'react-router-dom'
+import { ROUTES } from '@renderer/routes'
 
 const data = {
   user: {
@@ -40,7 +41,7 @@ const data = {
   navMain: [
     {
       title: 'Dashboard',
-      url: '/dashboard',
+      url: ROUTES.DASHBOARD_OVERVIEW.$path(),
       icon: LayoutDashboard
     },
     {
@@ -85,9 +86,9 @@ const data = {
   ],
   documents: [
     {
-      name: 'Data Collections',
-      url: '/data/collections',
-      icon: Database
+      name: 'Database Studio',
+      url: ROUTES.DATABASE_STUDIO.$path(),
+      icon: LayoutGrid
     },
     {
       name: 'Report Templates',
@@ -108,10 +109,8 @@ const data = {
 }
 
 export const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = (props) => {
-  const { user } = useAuthStore()
-
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -130,7 +129,7 @@ export const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = (props
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user || data.user} />
+        <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
   )

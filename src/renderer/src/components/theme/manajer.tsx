@@ -1,7 +1,7 @@
-// File: src/renderer/src/stores/theme.manajer.tsx
+// File: src/renderer/src/components/theme/manajer.tsx
 import * as React from 'react'
-import useThemeStore from './theme.store'
-import { Themes } from './theme.types'
+import useThemeStore from './store'
+import { Themes } from './types'
 
 const ThemeManajer: React.FC = () => {
   const { theme } = useThemeStore()

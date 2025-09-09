@@ -7,8 +7,8 @@ import { JSONFile } from 'lowdb/node'
 import { join, dirname } from 'path'
 import { mkdir, access, constants } from 'fs/promises'
 import _ from 'lodash'
-import { DatabaseGenerator } from '@schema/database/generator'
-import { exampleUserTable, examplePostTable } from '@schema/database/examples'
+import { DatabaseGenerator } from '@service/database/generator'
+import { exampleUserTable, examplePostTable } from '@service/database/examples'
 
 export interface DatabaseDatabaseConfig {
   databaseId: string

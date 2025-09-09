@@ -1,57 +1,56 @@
-# Copilot Instructions for Zhidesk
+# Zhidesk Copilot Instructions
 
 ## Project Overview
-Zhidesk is a low-code desktop platform for building business applications via JSON configuration. It uses Electron (main process), React (renderer), TypeScript, Vite, LowDB, Zustand, ORPC, Zod, and TanStack Query. The architecture is modular, with clear separation between UI, service, schema, and data layers.
+Zhidesk is a desktop low-code platform for building business applications rapidly via JSON configuration. It uses Electron (main process), React (renderer), TypeScript, Vite, LowDB (JSON file DB), ORPC (type-safe IPC), Zod (validation), Zustand (state), and TanStack Query (data fetching/caching).
 
-## Key Architectural Patterns
-- **Electron Main/Renderer Separation**: `src/main/` (Electron entry), `src/preload/` (ORPC client), `src/renderer/` (React UI)
-- **Service Layer**: `src/service/database/` (LowDB operations, singleton pattern), `src/service/orpc/` (ORPC routers for IPC)
-- **Schema System**: `src/schema/database/` (Zod-based schema, type safety, factories, generators)
-- **UI Components**: `src/renderer/src/components/` (reusable UI, ChadcnUI conventions)
-- **State Management**: Zustand stores in `src/renderer/src/stores/`, TanStack Query for async data
+## Architecture & Key Patterns
+- **Electron Main/Renderer Separation**: `src/main` (Electron entry), `src/preload` (ORPC client), `src/renderer/src` (React UI)
+- **Service Layer**: `src/service/database` (LowDB CRUD, schema validation, aggregation), `src/service/orpc` (ORPC routers)
+- **Schema & Form Generation**: `src/schema/collection` (Zod schemas, DocGenerator), `src/schema/generator` (schema utilities)
+- **Distributed Database**: Each collection is a separate JSON file in `data/`. Main DB metadata in `data/db.json`.
+- **ORPC Communication**: All cross-process calls use ORPC routers (`src/service/orpc/router.ts`).
+- **TypeScript Path Aliases**: Use aliases (`@service`, `_types`, `@schema`, `@`) for imports. See Vite config and tsconfig.*.json.
 
 ## Developer Workflows
-- **Build**: Use Vite (`npm run build`) for renderer, Electron for desktop packaging
-- **Test**: Vitest for unit tests (`npm test`), tests in `__tests__` folders
-- **Debug**: Electron/Vite dev mode (`npm run dev`), inspect main/renderer separately
-- **Database**: LowDB file-based, each collection is a separate file; schema validation via Zod
-- **IPC/Communication**: Use ORPC routers (`src/service/orpc/router.ts`) for type-safe main-renderer calls
+- **Install**: `npm install`
+- **Dev Mode**: `npm run dev` (Electron + Vite)
+- **Build**: `npm run build`, `npm run build:main`, `npm run build:renderer`
+- **Typecheck**: `npm run typecheck`
+- **Lint/Format**: `npm run lint`, `npm run format`
+- **Test**: `npm run test`, `npm run test:coverage`, or specific files (Vitest)
+- **DatabaseService Usage**: See `src/service/database/README.md` for API and patterns (singleton, multi-db, schema validation, aggregation, full-text search)
+- **ORPC Usage**: All DB and collection operations (CRUD, query, aggregation) are performed via ORPC calls from renderer to main. See `src/service/orpc/router.ts` and `src/renderer/src/lib/orpc-query.ts` for hooks and examples.
+- **Schema Generation**: Use `DocGenerator` and helpers in `src/schema/collection/doc.class.ts` for Zod schema and default extraction.
 
 ## Project-Specific Conventions
-- **JSON-Driven UI**: Forms, CRUD, and PDF generation are configured via JSON, not hardcoded
-- **Schema Generation**: Use Zod and factory functions (`src/schema/database/factories.ts`) for schema and validation
-- **Singleton Services**: DatabaseService is a singleton (`getInstance()`)
-- **File Structure**: Keep UI, service, schema, and types separate; use barrel files for exports
-- **Testing**: Place tests in `__tests__` folders next to implementation
+- **Type Safety**: All layers use TypeScript and Zod for validation.
+- **State Management**: Zustand for global state, TanStack Query for async data.
+- **Error Handling**: Use type-safe error handling (see examples in README). Handle ZodError, CollectionNotFoundError, etc.
+- **Testing**: Tests live alongside code in `__tests__` folders. Focus on schema, DB ops, error handling, and collection logic.
+- **Backup/Restore**: Use ORPC utils for backup/restore (`orpc.utils.backup.call()`, etc).
+- **Contributions**: Follow established structure, use aliases, add tests for new features, prefer distributed DB pattern.
 
 ## Integration Points
-- **External Libraries**: LowDB, Zod, Zustand, TanStack Query, ChadcnUI
-- **ORPC**: For IPC between Electron main and renderer
-- **PDF Generation**: Via JSON templates
+- **LowDB**: All data is stored in JSON files per collection. Main DB file is metadata only.
+- **ORPC**: All IPC and service calls use ORPC routers. No direct IPC.
+- **UI Components**: Use ChadcnUI, Tailwind, Lucide for UI. Reusable components in `src/renderer/src/components/ui`.
 
-## Examples
-- **Database Initialization**:
-  ```typescript
-  import { DatabaseService } from './src/service/database'
-  const db = DatabaseService.getInstance()
-  await db.initializeDatabase('my-db', 'My Database', [...])
-  ```
-- **Schema Creation**:
-  ```typescript
-  import { createTable, createStringField } from './src/schema/database/factories'
-  const userTable = createTable({ ... })
-  ```
-- **ORPC Router Usage**:
-  ```typescript
-  import { oRPCRouter } from './src/service/orpc/router'
-  await oRPCRouter.database.initializeDatabase({ ... })
-  ```
+## Example: Create Collection via ORPC
+```typescript
+await orpc.collection.create.call({
+  name: 'students',
+  label: 'Students',
+  fields: [ ... ],
+  timestamps: true,
+  softDelete: false
+})
+```
 
-## Key Files/Directories
-- `src/main/`, `src/preload/`, `src/renderer/`
-- `src/service/database/`, `src/service/orpc/`
-- `src/schema/database/`
-- `src/renderer/src/components/`, `src/renderer/src/stores/`
+## Example: DatabaseService CRUD
+```typescript
+const db = DatabaseService.getInstance()
+await db.create('my-db', 'users', { name: 'John' })
+```
 
 ---
-For unclear or missing conventions, ask the user for clarification or examples from their workflow.
+For unclear patterns or missing details, ask the user for clarification or examples from their workflow.
