@@ -11,7 +11,6 @@ import { Input } from '@renderer/components/ui/input'
 import { Textarea } from '@renderer/components/ui/textarea'
 import { Switch } from '@renderer/components/ui/switch'
 import { Label } from '@renderer/components/ui/label'
-import { Badge } from '@renderer/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import {
   FormControl,
@@ -20,95 +19,32 @@ import {
   FormLabel,
   FormMessage
 } from '@renderer/components/ui/form'
-import {
-  Type,
-  Hash,
-  CheckSquare,
-  Calendar,
-  List,
-  Link,
-  Layers,
-  Box,
-  Settings,
-  LucideIcon,
-  Plus,
-  Trash2,
-  GripVertical
-} from 'lucide-react'
-import {
-  ArrayFieldSchema,
-  BooleanFieldSchema,
-  DateFieldSchema,
-  EnumFieldSchema,
-  Field,
-  FieldType,
-  NumberFieldSchema,
-  ObjectFieldSchema,
-  ReferenceFieldSchema,
-  StringFieldSchema
-} from '@service/database/types'
-import z from 'zod'
+import { Button } from '@renderer/components/ui/button'
+import { Settings, Plus, Trash2, GripVertical } from 'lucide-react'
+import { EnumField, FieldType, StringField, Table } from '@service/database/types'
 import { useFieldArray, useFormContext } from 'react-hook-form'
-import { EnumField } from './types'
-import { Button } from '../ui/button'
+import { fieldTypes } from './const'
 
-// const fieldTypes: { value: Field; label: string; icon: React.ReactNode }[] = [
-//   { value: 'string', label: 'String', icon: <Type className="h-4 w-4" /> },
-//   { value: 'number', label: 'Number', icon: <Hash className="h-4 w-4" /> },
-//   { value: 'boolean', label: 'Boolean', icon: <CheckSquare className="h-4 w-4" /> },
-//   { value: 'date', label: 'Date', icon: <Calendar className="h-4 w-4" /> },
-//   { value: 'enum', label: 'Enum', icon: <List className="h-4 w-4" /> },
-//   { value: 'reference', label: 'Reference', icon: <Link className="h-4 w-4" /> },
-//   { value: 'array', label: 'Array', icon: <Layers className="h-4 w-4" /> },
-//   { value: 'object', label: 'Object', icon: <Box className="h-4 w-4" /> }
-// ]
-
-type FieldTypes = Record<
-  FieldType,
-  {
-    schema: z.ZodType<Field>
-    icon: LucideIcon
-  }
->
-
-const fieldTypes: FieldTypes = {
-  array: {
-    icon: Layers,
-    schema: ArrayFieldSchema
-  },
-  boolean: {
-    icon: CheckSquare,
-    schema: BooleanFieldSchema
-  },
-  date: {
-    icon: Calendar,
-    schema: DateFieldSchema
-  },
-  enum: {
-    icon: List,
-    schema: EnumFieldSchema
-  },
-  number: {
-    icon: Hash,
-    schema: NumberFieldSchema
-  },
-  object: {
-    icon: Box,
-    schema: ObjectFieldSchema
-  },
-  reference: {
-    icon: Link,
-    schema: ReferenceFieldSchema
-  },
-  string: {
-    icon: Type,
-    schema: StringFieldSchema
-  }
+interface FieldEditorProps {
+  index: number
 }
 
-const EnumEditor: React.FC = () => {
-  const { control } = useFormContext<EnumField>()
-  const { fields, append, remove } = useFieldArray({ control, name: 'options' })
+function setName<T extends string>({
+  index,
+  name
+}: {
+  index: number
+  name: T
+}): `fields.${number}.${T}` {
+  return `fields.${index}.${name}`
+}
+
+const EnumInputOptions: React.FC<FieldEditorProps> = ({ index }) => {
+  const { control } = useFormContext<{ fields: EnumField[] }>()
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: setName({ index, name: 'options' })
+  })
   return (
     <Card>
       <CardHeader>
@@ -136,7 +72,7 @@ const EnumEditor: React.FC = () => {
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField
                 control={control}
-                name={`options.${optionIndex}.label`}
+                name={setName({ index, name: `options.${optionIndex}.label` })}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Option Label *</FormLabel>
@@ -149,7 +85,7 @@ const EnumEditor: React.FC = () => {
               />
               <FormField
                 control={control}
-                name={`options.${optionIndex}.value`}
+                name={setName({ index, name: `options.${optionIndex}.value` })}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Option Value *</FormLabel>
@@ -189,15 +125,48 @@ const EnumEditor: React.FC = () => {
   )
 }
 
-export const FieldEditor: React.FC = () => {
-  const { control } = useFormContext<Field>()
+const StringInputValidation: React.FC<FieldEditorProps> = ({ index }) => {
+  const { control } = useFormContext<{ fields: StringField[] }>()
+  return (
+    <>
+      <FormField
+        control={control}
+        name={setName({ index, name: 'validation.max' })}
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <Input type="number" placeholder="Max length" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name={setName({ index, name: 'validation.min' })}
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <Input type="number" placeholder="Min length" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
+  )
+}
+
+export const FieldEditor: React.FC<FieldEditorProps> = ({ index }) => {
+  const { control, watch } = useFormContext<Table>()
+  const type = watch(setName({ index, name: 'type' }))
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <FormField
           control={control}
-          name="name"
+          name={setName({ index, name: 'name' })}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Field Name *</FormLabel>
@@ -210,7 +179,7 @@ export const FieldEditor: React.FC = () => {
         />
         <FormField
           control={control}
-          name="label"
+          name={setName({ index, name: 'label' })}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Display Label *</FormLabel>
@@ -224,7 +193,7 @@ export const FieldEditor: React.FC = () => {
       </div>
       <FormField
         control={control}
-        name="type"
+        name={setName({ index, name: 'type' })}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Field Type *</FormLabel>
@@ -238,7 +207,7 @@ export const FieldEditor: React.FC = () => {
                 {Object.values(FieldType).map((type) => {
                   const { icon: Icon } = fieldTypes[type]
                   return (
-                    <SelectItem key={type.value} value={type.value}>
+                    <SelectItem key={type} value={type}>
                       <div className="flex items-center gap-2">
                         <Icon className="h-4 w-4" />
                         <span className="capitalize">{type}</span>
@@ -254,7 +223,7 @@ export const FieldEditor: React.FC = () => {
       />
       <FormField
         control={control}
-        name="description"
+        name={setName({ index, name: 'description' })}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Description</FormLabel>
@@ -267,158 +236,109 @@ export const FieldEditor: React.FC = () => {
       />
 
       {/* Field-specific settings based on type */}
-      {/* {field.type === 'enum' && (
-        <div className="space-y-2">
-          <Label>Enum Options</Label>
-          <Input
-            placeholder="comma,separated,values"
-            value={field.validation?.options?.join(',') || ''}
-            onChange={(e) =>
-              updateField({
-                validation: {
-                  ...field.validation,
-                  options: e.target.value
-                    .split(',')
-                    .map((opt) => opt.trim())
-                    .filter((opt) => opt)
-                }
-              })
-            }
-          />
-          <p className="text-sm text-gray-500">Enter options separated by commas</p>
-        </div>
-      )} */}
+      {type === 'enum' && <EnumInputOptions index={index} />}
 
       {/* Validation settings based on type */}
-      {(field.type === 'string' || field.type === 'number') && (
+      {(type === 'string' || type === 'number') && (
         <div className="space-y-2">
           <Label>Validation Rules</Label>
           <div className="grid grid-cols-2 gap-4">
-            {field.type === 'string' && (
-              <>
-                <Input
-                  type="number"
-                  placeholder="Min length"
-                  value={field.validation?.min || ''}
-                  onChange={(e) =>
-                    updateField({
-                      validation: {
-                        ...field.validation,
-                        min: e.target.value ? parseInt(e.target.value) : undefined
-                      }
-                    })
-                  }
-                />
-                <Input
-                  type="number"
-                  placeholder="Max length"
-                  value={field.validation?.max || ''}
-                  onChange={(e) =>
-                    updateField({
-                      validation: {
-                        ...field.validation,
-                        max: e.target.value ? parseInt(e.target.value) : undefined
-                      }
-                    })
-                  }
-                />
-              </>
-            )}
-            {field.type === 'number' && (
-              <>
-                <Input
-                  type="number"
-                  placeholder="Minimum value"
-                  value={field.validation?.min || ''}
-                  onChange={(e) =>
-                    updateField({
-                      validation: {
-                        ...field.validation,
-                        min: e.target.value ? parseFloat(e.target.value) : undefined
-                      }
-                    })
-                  }
-                />
-                <Input
-                  type="number"
-                  placeholder="Maximum value"
-                  value={field.validation?.max || ''}
-                  onChange={(e) =>
-                    updateField({
-                      validation: {
-                        ...field.validation,
-                        max: e.target.value ? parseFloat(e.target.value) : undefined
-                      }
-                    })
-                  }
-                />
-              </>
-            )}
+            {type === 'string' && <StringInputValidation index={index} />}
+            {type === 'number' && <StringInputValidation index={index} />}
           </div>
         </div>
       )}
 
-      <div className="space-y-2">
+      {/* <div className="space-y-2">
         <Label>Default Value</Label>
         <Input
           placeholder="Default value for this field"
           value={field.defaultValue || ''}
           onChange={(e) => updateField({ defaultValue: e.target.value })}
         />
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center space-x-2">
-          <Switch
-            id={`field-required-${field.name}`}
-            checked={field.required}
-            onCheckedChange={(checked) => updateField({ required: checked })}
-          />
-          <Label htmlFor={`field-required-${field.name}`}>Required</Label>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id={`field-unique-${field.name}`}
-            checked={field.unique}
-            onCheckedChange={(checked) => updateField({ unique: checked })}
-          />
-          <Label htmlFor={`field-unique-${field.name}`}>Unique</Label>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id={`field-hidden-${field.name}`}
-            checked={field.hidden}
-            onCheckedChange={(checked) => updateField({ hidden: checked })}
-          />
-          <Label htmlFor={`field-hidden-${field.name}`}>Hidden</Label>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id={`field-readonly-${field.name}`}
-            checked={field.readonly}
-            onCheckedChange={(checked) => updateField({ readonly: checked })}
-          />
-          <Label htmlFor={`field-readonly-${field.name}`}>Readonly</Label>
-        </div>
-      </div>
-
-      {/* Field summary */}
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium">Field Summary</span>
-          </div>
-          <div className="flex gap-2">
-            {field.required && <Badge variant="secondary">Required</Badge>}
-            {field.unique && <Badge variant="secondary">Unique</Badge>}
-            {field.hidden && <Badge variant="secondary">Hidden</Badge>}
-            {field.readonly && <Badge variant="secondary">Readonly</Badge>}
-          </div>
-        </div>
+        <FormField
+          control={control}
+          name={setName({ index, name: 'required' })}
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2">
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled
+                  aria-readonly
+                />
+              </FormControl>
+              <div className="space-y-0.5">
+                <FormLabel>Required</FormLabel>
+                {/* <FormDescription>Receive emails about your account security.</FormDescription> */}
+              </div>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={setName({ index, name: 'unique' })}
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2">
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled
+                  aria-readonly
+                />
+              </FormControl>
+              <div className="space-y-0.5">
+                <FormLabel>Unique</FormLabel>
+                {/* <FormDescription>Receive emails about your account security.</FormDescription> */}
+              </div>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={setName({ index, name: 'hidden' })}
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2">
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled
+                  aria-readonly
+                />
+              </FormControl>
+              <div className="space-y-0.5">
+                <FormLabel>Hidden</FormLabel>
+                {/* <FormDescription>Receive emails about your account security.</FormDescription> */}
+              </div>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={setName({ index, name: 'readonly' })}
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2">
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled
+                  aria-readonly
+                />
+              </FormControl>
+              <div className="space-y-0.5">
+                <FormLabel>Readonly</FormLabel>
+                {/* <FormDescription>Receive emails about your account security.</FormDescription> */}
+              </div>
+            </FormItem>
+          )}
+        />
       </div>
     </div>
   )

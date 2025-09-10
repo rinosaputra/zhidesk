@@ -38,6 +38,7 @@ import {
   QueryObject
 } from '@service/database/types'
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert'
+import Creates from './Creates'
 
 export const DatabaseManager: React.FC = () => {
   const [selectedTable, setSelectedTable] = useState<string>('')
@@ -233,19 +234,22 @@ export const DatabaseManager: React.FC = () => {
               <Database className="h-5 w-5" />
               Database Studio
             </h2>
-            <Button variant="outline" size="icon" className="size-8" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4" />
-            <Input
-              placeholder="Search tables..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
+          <div className="flex flex-row items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4" />
+              <Input
+                placeholder="Search tables..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Button variant="outline" size="icon" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Creates />
           </div>
         </div>
 

@@ -60,7 +60,24 @@ describe('Database Generator - Table Simulation', () => {
         createEnumField({
           name: 'role',
           label: 'Role',
-          options: ['admin', 'teacher', 'student', 'parent'],
+          options: [
+            {
+              label: 'admin',
+              value: 'admin'
+            },
+            {
+              label: 'teacher',
+              value: 'teacher'
+            },
+            {
+              label: 'student',
+              value: 'student'
+            },
+            {
+              label: 'parent',
+              value: 'parent'
+            }
+          ],
           default: 'student'
         }),
         createBooleanField({
@@ -255,7 +272,24 @@ describe('Database Generator - Table Simulation', () => {
         createEnumField({
           name: 'status',
           label: 'Status',
-          options: ['enrolled', 'completed', 'dropped', 'pending'],
+          options: [
+            {
+              label: 'enrolled',
+              value: 'enrolled'
+            },
+            {
+              label: 'completed',
+              value: 'completed'
+            },
+            {
+              label: 'dropped',
+              value: 'dropped'
+            },
+            {
+              label: 'pending',
+              value: 'pending'
+            }
+          ],
           default: 'enrolled'
         }),
         createNumberField({

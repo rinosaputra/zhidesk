@@ -1,5 +1,5 @@
 // File: src/renderer/src/components/database/CreateTableDialog.tsx
-import React, { useState } from 'react'
+import React from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Dialog,
@@ -16,79 +16,49 @@ import { Switch } from '@renderer/components/ui/switch'
 import { Label } from '@renderer/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
 import {
-  Plus,
-  X,
-  Save,
-  Table,
-  Type,
-  Hash,
-  CheckSquare,
-  Calendar,
-  List,
-  Link,
-  Layers,
-  Box
-} from 'lucide-react'
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@renderer/components/ui/form'
+import { Plus, X, Save, Table, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { database } from '@renderer/lib/orpc-query'
-import { Table as CreateTableFormData, Field as FieldFormData, FieldType } from './types'
+import { Table as CreateTableFormData } from './types'
 import { FieldEditor } from './FieldEditor'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useFieldArray, useForm } from 'react-hook-form'
+import { Table as TableSchemaType, TableSchema } from '@service/database/types'
+import { fieldTypes } from './const'
 
 interface CreateTableDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess?: () => void
 }
 
-const defaultField: FieldFormData = {
-  name: '',
-  label: '',
-  type: 'string',
-  required: false,
-  unique: false,
-  hidden: false,
-  readonly: false
-}
-
-export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({
-  open,
-  onOpenChange,
-  onSuccess
-}) => {
+export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ open, onOpenChange }) => {
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState('basic')
-  const [formData, setFormData] = useState<CreateTableFormData>({
-    name: '',
-    label: '',
-    description: '',
-    timestamps: true,
-    softDelete: false,
-    fields: [defaultField]
+  const form = useForm<TableSchemaType>({
+    resolver: zodResolver(TableSchema),
+    defaultValues: {
+      name: '',
+      label: '',
+      description: '',
+      timestamps: true,
+      softDelete: false,
+      fields: []
+    }
   })
+  const columns = useFieldArray({ control: form.control, name: 'fields' })
 
   const createTableMutation = useMutation({
-    mutationFn: async (tableData: CreateTableFormData) => {
+    mutationFn: async (tableConfig: CreateTableFormData) => {
       const result = await database.table.create.call({
         databaseId: 'default',
-        tableConfig: {
-          name: tableData.name,
-          label: tableData.label,
-          description: tableData.description,
-          fields: tableData.fields.map((field) => ({
-            name: field.name,
-            label: field.label,
-            type: field.type,
-            description: field.description,
-            required: field.required,
-            unique: field.unique,
-            hidden: field.hidden,
-            readonly: field.readonly,
-            default: field.defaultValue,
-            validation: field.validation
-          })),
-          timestamps: tableData.timestamps,
-          softDelete: tableData.softDelete
-        }
+        tableConfig
       })
 
       if (!result.success) {
@@ -100,57 +70,11 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({
       queryClient.invalidateQueries({ queryKey: ['database', 'tables'] })
       toast.success('Table created successfully')
       onOpenChange(false)
-      setFormData({
-        name: '',
-        label: '',
-        description: '',
-        timestamps: true,
-        softDelete: false,
-        fields: [defaultField]
-      })
-      onSuccess?.()
     },
     onError: (error: Error) => {
       toast.error(`Failed to create table: ${error.message}`)
     }
   })
-
-  const addField = () => {
-    setFormData((prev) => ({
-      ...prev,
-      fields: [...prev.fields, { ...defaultField }]
-    }))
-  }
-
-  const removeField = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      fields: prev.fields.filter((_, i) => i !== index)
-    }))
-  }
-
-  const updateField = (index: number, updates: Partial<FieldFormData>) => {
-    setFormData((prev) => ({
-      ...prev,
-      fields: prev.fields.map((field, i) => (i === index ? { ...field, ...updates } : field))
-    }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    createTableMutation.mutate(formData)
-  }
-
-  const fieldIcons: Record<FieldType, React.ReactNode> = {
-    string: <Type className="h-4 w-4" />,
-    number: <Hash className="h-4 w-4" />,
-    boolean: <CheckSquare className="h-4 w-4" />,
-    date: <Calendar className="h-4 w-4" />,
-    enum: <List className="h-4 w-4" />,
-    reference: <Link className="h-4 w-4" />,
-    array: <Layers className="h-4 w-4" />,
-    object: <Box className="h-4 w-4" />
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -165,126 +89,172 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="fields">Fields</TabsTrigger>
-              <TabsTrigger value="options">Options</TabsTrigger>
-            </TabsList>
+        <div className="space-y-6">
+          <Form {...form}>
+            <Tabs defaultValue={'basic'}>
+              <TabsList>
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="fields">Fields</TabsTrigger>
+                <TabsTrigger value="options">Options</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="basic" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Table Name *</Label>
-                  <Input
-                    id="name"
-                    placeholder="e.g., users, products, orders"
-                    value={formData.name}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                    required
+              <TabsContent value="basic" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., users, products, orders" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <p className="text-sm text-gray-500">Lowercase, snake_case recommended</p>
+                  <FormField
+                    control={form.control}
+                    name="label"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Users, Products, Orders" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="label">Display Label *</Label>
-                  <Input
-                    id="label"
-                    placeholder="e.g., Users, Products, Orders"
-                    value={formData.label}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, label: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe what this table is used for..."
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  rows={3}
+                <FormField
+                  control={form.control}
+                  name="label"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="e.g., Users, Products, Orders" {...field} rows={3} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </TabsContent>
+              </TabsContent>
 
-            <TabsContent value="fields" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Table Fields</Label>
-                <Button type="button" onClick={addField} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Field
-                </Button>
-              </div>
+              <TabsContent value="fields" className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Table Fields</Label>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      columns.append({
+                        type: 'string',
+                        label: '',
+                        name: '',
+                        coerce: false,
+                        default: '',
+                        description: '',
+                        hidden: false,
+                        index: false,
+                        readonly: false,
+                        required: false,
+                        unique: false,
+                        validation: {
+                          format: 'string',
+                          length: -1,
+                          max: -1,
+                          min: -1,
+                          pattern: '',
+                          trim: true
+                        }
+                      })
+                    }
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Field
+                  </Button>
+                </div>
 
-              <div className="space-y-4 max-h-96 overflow-y-auto p-1">
-                {formData.fields.map((field, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {fieldIcons[field.type]}
-                        <span className="font-medium">Field {index + 1}</span>
+                <div className="space-y-4 max-h-96 overflow-y-auto p-1">
+                  {columns.fields.map((field, index) => {
+                    const { icon: Icon } = fieldTypes[field.type]
+                    return (
+                      <div key={index} className="border rounded-lg p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Icon />
+                            <span className="font-medium">Field {index + 1}</span>
+                          </div>
+                          {columns.fields.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => columns.remove(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+
+                        <FieldEditor index={index} />
                       </div>
-                      {formData.fields.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeField(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                    )
+                  })}
+                </div>
+              </TabsContent>
 
-                    <FieldEditor
-                      field={field}
-                      onChange={(updates) => updateField(index, updates)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="options" className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Timestamps</Label>
-                    <p className="text-sm text-gray-500">
-                      Automatically add createdAt and updatedAt fields
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.timestamps}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, timestamps: checked }))
-                    }
+              <TabsContent value="options" className="space-y-4">
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="timestamps"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                          <FormLabel>Timestamps</FormLabel>
+                          <FormDescription>
+                            Automatically add createdAt and updatedAt fields.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            aria-readonly
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="softDelete"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                          <FormLabel>Soft Delete</FormLabel>
+                          <FormDescription>
+                            Enable soft delete functionality with deletedAt field.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            aria-readonly
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
                   />
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Soft Delete</Label>
-                    <p className="text-sm text-gray-500">
-                      Enable soft delete functionality with deletedAt field
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.softDelete}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, softDelete: checked }))
-                    }
-                  />
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+            </Tabs>
+          </Form>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -293,18 +263,18 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({
             <Button type="submit" disabled={createTableMutation.isPending}>
               {createTableMutation.isPending ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <Loader2 className="h-6 w-6 animate-spin" />
                   Creating...
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="h-4 w-4" />
                   Create Table
                 </>
               )}
             </Button>
           </DialogFooter>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )

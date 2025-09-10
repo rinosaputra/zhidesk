@@ -60,7 +60,20 @@ export const exampleUserTable = createTable({
     createEnumField({
       name: 'role',
       label: 'User Role',
-      options: ['admin', 'user', 'moderator'],
+      options: [
+        {
+          label: 'admin',
+          value: 'admin'
+        },
+        {
+          label: 'user',
+          value: 'user'
+        },
+        {
+          label: 'moderator',
+          value: 'moderator'
+        }
+      ],
       default: 'user'
     }),
     createBooleanField({

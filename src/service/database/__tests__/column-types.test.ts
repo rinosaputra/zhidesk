@@ -162,7 +162,20 @@ describe('Database Generator - Column Types', () => {
       const field = createEnumField({
         name: 'status',
         label: 'Status',
-        options: ['active', 'inactive', 'pending'],
+        options: [
+          {
+            label: 'active',
+            value: 'active'
+          },
+          {
+            label: 'inactive',
+            value: 'inactive'
+          },
+          {
+            label: 'pending',
+            value: 'pending'
+          }
+        ],
         default: 'pending'
       })
 

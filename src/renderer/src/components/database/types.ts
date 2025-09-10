@@ -45,7 +45,7 @@ export const StringFieldSchema = BaseFieldSchema.extend({
       max: z.number().min(1).optional(),
       length: z.number().min(0).optional(),
       pattern: z.string().optional(),
-      format: z.enum(['email', 'url', 'uuid', 'phone', 'password']).optional(),
+      format: z.enum(['email', 'url', 'uuid', 'phone', 'password', 'string']).optional(),
       trim: zBool(true)
     })
     .optional()
@@ -148,7 +148,7 @@ export const ObjectFieldSchema: z.ZodType<ObjectField> = z.lazy(() =>
 )
 
 // Union of all field types
-export const FieldSchema: z.ZodType<Field> = z.lazy(() =>
+export const FieldSchema: z.ZodType<Field, Field> = z.lazy(() =>
   z.discriminatedUnion('type', [
     StringFieldSchema,
     NumberFieldSchema,

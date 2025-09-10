@@ -14,6 +14,7 @@ src/service/database/
 ├── service.ts        # DatabaseService - core implementation
 ├── router.ts         # ORPC router endpoints
 ├── examples.ts       # Contoh table configurations
+├── database.json     # Metadata database (new)
 └── README.md         # Dokumentasi ini
 ```
 
@@ -74,16 +75,17 @@ const validatedData = generator.validateData('users', userData)
 
 ### 4. Database Service (`service.ts`)
 
-Singleton class yang mengelola semua operasi database:
+Singleton class yang mengelola semua operasi database dengan struktur data yang dioptimasi:
 
 ```typescript
 const db = DatabaseService.getInstance()
 
-// Initialize database
+// Initialize database dengan metadata terpusat
 await db.initializeDatabase('my-db', 'My Database', [userTable, postTable])
 
-// CRUD operations
+// CRUD operations dengan performa tinggi untuk operasi berdasarkan ID
 await db.create('my-db', 'users', { email: 'user@example.com', age: 25 })
+const user = await db.findById('my-db', 'users', 'document-id') // O(1) operation
 const users = await db.find('my-db', 'users', { age: { $gt: 20 } })
 ```
 
@@ -98,6 +100,65 @@ const result = await orpc.database.find.call({
   tableName: 'users',
   query: { age: { $gt: 20 } }
 })
+```
+
+## Struktur Data Baru & Optimasi
+
+### Struktur File yang Dioptimasi
+
+**Format Lama (Array):**
+```json
+[
+  {
+    "_id": "uuid-1",
+    "email": "user@example.com",
+    "name": "John Doe"
+  },
+  {
+    "_id": "uuid-2",
+    "email": "admin@example.com",
+    "name": "Jane Smith"
+  }
+]
+```
+
+**Format Baru (Object dengan ID sebagai Key):**
+```json
+{
+  "uuid-1": {
+    "_id": "uuid-1",
+    "email": "user@example.com",
+    "name": "John Doe"
+  },
+  "uuid-2": {
+    "_id": "uuid-2",
+    "email": "admin@example.com",
+    "name": "Jane Smith"
+  }
+}
+```
+
+### Keuntungan Struktur Baru
+
+1. **Pencarian Berdasarkan ID**: Operasi `findById()` sekarang O(1) - sangat cepat
+2. **Update Efisien**: Update berdasarkan ID langsung mengakses key yang spesifik
+3. **Delete Optimal**: Delete berdasarkan ID langsung menghapus key
+4. **Konsistensi Data**: Struktur storage sama dengan struktur memory
+
+### Metadata Terpusat
+
+File `data/database.json` menyimpan metadata semua database:
+
+```json
+{
+  "my-app": {
+    "name": "My Application",
+    "version": 1,
+    "tables": [...],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
 ```
 
 ## Field Types Supported
@@ -118,16 +179,16 @@ const result = await orpc.database.find.call({
 
 ## Operations
 
-### CRUD Operations
+### CRUD Operations (Dioptimasi)
 
-- `create()` - Insert single document
-- `createMany()` - Insert multiple documents
-- `find()` - Query documents dengan filter
+- `create()` - Insert single document (otomatis generate UUID)
+- `createMany()` - Insert multiple documents dengan batch processing
+- `find()` - Query documents dengan filter (konversi ke array untuk filtering)
 - `findOne()` - Find single document
-- `findById()` - Find by ID
-- `update()` - Update single document
+- `findById()` - **O(1)** Find by ID - sangat cepat
+- `update()` - **O(1)** Update single document berdasarkan ID
 - `updateMany()` - Update multiple documents
-- `delete()` - Delete single document (soft/hard delete)
+- `delete()` - **O(1)** Delete single document (soft/hard delete)
 - `deleteMany()` - Delete multiple documents
 
 ### Query Operations
@@ -150,6 +211,16 @@ Support MongoDB-like aggregation pipeline:
 - `$unwind` - Unwind arrays
 - `$lookup` - Join with other collections
 - `$addFields` - Add computed fields
+
+## Performance Characteristics
+
+| Operation | Complexity | Keterangan |
+|-----------|------------|------------|
+| `findById()` | O(1) | Langsung akses melalui key |
+| `update()` | O(1) | Langsung akses melalui key |
+| `delete()` | O(1) | Langsung akses melalui key |
+| `find()` | O(n) | Perlu konversi ke array untuk filtering |
+| `create()` | O(1) | Insert dengan key yang sudah diketahui |
 
 ## Validation Features
 
@@ -181,19 +252,25 @@ createTable({
 
 ## Example Usage
 
-### 1. Initialize Database
+### 1. Initialize Database dengan Metadata
 
 ```typescript
 import { DatabaseService } from './service'
 import { exampleUserTable, examplePostTable } from './examples'
 
 const db = DatabaseService.getInstance()
-await db.initializeDatabase('my-app', 'My Application', [exampleUserTable, examplePostTable])
+
+// Check metadata terpusat
+const exists = await db.databaseExists('my-app')
+if (!exists) {
+  await db.initializeDatabase('my-app', 'My Application', [exampleUserTable, examplePostTable])
+}
 ```
 
-### 2. Create Document
+### 2. Create Document dengan Auto-ID
 
 ```typescript
+// ID akan digenerate otomatis jika tidak disediakan
 const user = await db.create('my-app', 'users', {
   email: 'john@example.com',
   firstName: 'John',
@@ -201,37 +278,36 @@ const user = await db.create('my-app', 'users', {
   role: 'user',
   isActive: true
 })
+
+console.log(user._id) // UUID yang digenerate otomatis
 ```
 
-### 3. Query Documents
+### 3. Query Documents dengan Performa Tinggi
 
 ```typescript
-// Find active users
+// Operasi sangat cepat - O(1)
+const user = await db.findById('my-app', 'users', 'specific-user-id')
+
+// Operasi regular - O(n)
 const activeUsers = await db.find('my-app', 'users', {
   isActive: true,
   role: 'user'
 })
 
-// Search with full-text
+// Search dengan full-text
 const results = await db.search('my-app', 'users', 'john', ['firstName', 'lastName', 'email'])
 ```
 
-### 4. Aggregation
+### 4. Update dan Delete yang Efisien
 
 ```typescript
-const pipeline = [
-  { $match: { isActive: true } },
-  {
-    $group: {
-      _id: '$role',
-      count: { $sum: 1 },
-      averageAge: { $avg: '$age' }
-    }
-  },
-  { $sort: { count: -1 } }
-]
+// Update sangat cepat - O(1)
+const updatedUser = await db.update('my-app', 'users', 'user-id', {
+  isActive: false
+})
 
-const stats = await db.aggregate('my-app', 'users', pipeline)
+// Delete sangat cepat - O(1)
+const deleted = await db.delete('my-app', 'users', 'user-id')
 ```
 
 ## Error Handling
@@ -258,17 +334,28 @@ if (!result.success) {
 
 ## Best Practices
 
-### 1. Database Initialization
+### 1. Database Initialization dengan Metadata
 
 ```typescript
-// Check jika database sudah ada sebelum initialize
+// Selalu gunakan databaseExists() yang memeriksa metadata terpusat
 const exists = await db.databaseExists('my-app')
 if (!exists) {
   await db.initializeDatabase('my-app', 'My App', tables)
 }
 ```
 
-### 2. Validation
+### 2. Gunakan findById() untuk Operasi Berdasarkan ID
+
+```typescript
+// ✅ Recommended - Sangat cepat
+const user = await db.findById('my-app', 'users', id)
+
+// ❌ Avoid - Lebih lambat
+const users = await db.find('my-app', 'users', { _id: id })
+const user = users[0]
+```
+
+### 3. Validation sebelum Operasi
 
 ```typescript
 // Selalu validate data sebelum operasi
@@ -280,7 +367,7 @@ try {
 }
 ```
 
-### 3. Error Handling
+### 4. Error Handling untuk Operasi Critical
 
 ```typescript
 // Gunakan try-catch untuk operations yang critical
@@ -294,25 +381,37 @@ try {
 }
 ```
 
-### 4. Performance
-
-- Gunakan indexing untuk field yang sering di-query
-- Gunakan projection untuk hanya mengambil field yang diperlukan
-- Batasi hasil query dengan `limit` untuk large datasets
-
 ## Testing
 
 Test modul database dengan Vitest:
 
 ```typescript
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { DatabaseService } from './service'
 
 describe('DatabaseService', () => {
-  it('should initialize database', async () => {
-    const db = DatabaseService.getInstance()
+  let db: DatabaseService
+
+  beforeEach(() => {
+    db = DatabaseService.getInstance()
+  })
+
+  afterEach(async () => {
+    await db.closeDatabase('test')
+  })
+
+  it('should initialize database dengan metadata', async () => {
     await db.initializeDatabase('test', 'Test DB', [])
     expect(await db.databaseExists('test')).toBe(true)
+  })
+
+  it('should perform O(1) findById operations', async () => {
+    await db.initializeDatabase('test', 'Test DB', [])
+    const user = await db.create('test', 'users', { name: 'Test User' })
+
+    // This should be very fast
+    const foundUser = await db.findById('test', 'users', user._id!)
+    expect(foundUser?.name).toBe('Test User')
   })
 })
 ```
@@ -322,7 +421,7 @@ describe('DatabaseService', () => {
 Gunakan ORPC utilities untuk backup/restore:
 
 ```typescript
-// Backup database
+// Backup database (termasuk metadata)
 await orpc.utils.backup.call({ databaseId: 'my-app' })
 
 // Restore database
@@ -331,19 +430,19 @@ await orpc.utils.restore.call({ databaseId: 'my-app', backupData })
 
 ## Integration dengan ORPC
 
-Semua operations tersedia melalui ORPC router:
+Semua operations tersedia melalui ORPC router dengan performa yang dioptimasi:
 
 ```typescript
 // Dari renderer process
-const response = await orpc.database.find.call({
+const response = await orpc.database.findById.call({
   databaseId: 'my-app',
   tableName: 'users',
-  query: { isActive: true }
+  id: 'user-id'
 })
 
 if (response.success) {
-  const users = response.documents
-  // Process data
+  const user = response.document
+  // Process data dengan cepat
 }
 ```
 
@@ -352,6 +451,7 @@ if (response.success) {
 1. **File-based**: Storage menggunakan JSON files, tidak suitable untuk very large datasets
 2. **In-memory**: Data di-load ke memory, perlu consider memory usage untuk large datasets
 3. **Single process**: Tidak support concurrent writes dari multiple processes
+4. **Query Operations**: Operasi find() masih O(n) karena perlu konversi ke array
 
 ## Future Enhancements
 
@@ -360,6 +460,7 @@ if (response.success) {
 3. **Migration**: Schema migration utilities
 4. **Replication**: Multi-database replication
 5. **Caching**: Query result caching untuk performance
+6. **Secondary Indexes**: Index untuk field selain _id
 
 ---
 

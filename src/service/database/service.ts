@@ -4,20 +4,21 @@
 import { Low } from 'lowdb'
 import { JSONFile } from 'lowdb/node'
 import { join, dirname } from 'path'
-import { mkdir, access, constants } from 'fs/promises'
+import { mkdir, access, constants, readFile, writeFile } from 'fs/promises'
 import _ from 'lodash'
 import { DatabaseGenerator } from './generator'
 import { exampleUserTable, examplePostTable } from './examples'
-import { Table } from './types'
+import { Database, Table } from './types'
 import { AggregationStage, DocumentData, QueryOptions, SearchOptions } from './types'
 
 // ==================== DATABASE SERVICE ====================
 
 export class DatabaseService {
   private static instance: DatabaseService
-  private dbs: Map<string, Low<DocumentData[]>> = new Map()
+  private dbs: Record<string, Low<Record<string, DocumentData>>> = {}
   private generators: Map<string, DatabaseGenerator> = new Map()
   private baseDataPath: string = 'data'
+  private databaseMetadataPath: string = join(this.baseDataPath, 'database.json')
 
   private constructor() {
     this.initializeBaseDirectories()
@@ -33,8 +34,35 @@ export class DatabaseService {
   private async initializeBaseDirectories(): Promise<void> {
     try {
       await mkdir(this.baseDataPath, { recursive: true })
+
+      // Initialize database metadata file jika belum ada
+      try {
+        await access(this.databaseMetadataPath, constants.F_OK)
+      } catch {
+        await writeFile(this.databaseMetadataPath, JSON.stringify({}, null, 2))
+      }
     } catch (error) {
       console.error('Error creating base data directory:', error)
+    }
+  }
+
+  // Load database metadata
+  private async loadDatabaseMetadata(): Promise<Record<string, Database>> {
+    try {
+      const data = await readFile(this.databaseMetadataPath, 'utf-8')
+      return JSON.parse(data)
+    } catch (error) {
+      console.error('Error loading database metadata:', error)
+      return {}
+    }
+  }
+
+  // Save database metadata
+  private async saveDatabaseMetadata(metadata: Record<string, Database>): Promise<void> {
+    try {
+      await writeFile(this.databaseMetadataPath, JSON.stringify(metadata, null, 2))
+    } catch (error) {
+      console.error('Error saving database metadata:', error)
     }
   }
 
@@ -50,11 +78,25 @@ export class DatabaseService {
       await mkdir(databasePath, { recursive: true })
 
       const generator = new DatabaseGenerator({
-        name: `${databaseName}_database`,
+        name: databaseName,
         tables: [...tables, exampleUserTable, examplePostTable] as Table[]
       })
 
       this.generators.set(databaseId, generator)
+
+      // Load existing metadata
+      const metadata = await this.loadDatabaseMetadata()
+
+      // Update metadata
+      metadata[databaseId] = {
+        name: databaseName,
+        version: 1,
+        tables: generator.getAllTables() as Table[],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      await this.saveDatabaseMetadata(metadata)
 
       for (const table of generator.getAllTables()) {
         await this.initializeTable(databaseId, table.name)
@@ -74,9 +116,9 @@ export class DatabaseService {
       try {
         await access(tablePath, constants.F_OK)
       } catch {
-        const adapter = new JSONFile<DocumentData[]>(tablePath)
-        const db = new Low(adapter, [])
-        db.data = []
+        const adapter = new JSONFile<Record<string, DocumentData>>(tablePath)
+        const db = new Low(adapter, {})
+        db.data = {}
         await db.write()
       }
     } catch (error) {
@@ -85,25 +127,28 @@ export class DatabaseService {
     }
   }
 
-  private async getDatabase(databaseId: string, tableName: string): Promise<Low<DocumentData[]>> {
+  private async getDatabase(
+    databaseId: string,
+    tableName: string
+  ): Promise<Low<Record<string, DocumentData>>> {
     const dbKey = `${databaseId}_${tableName}`
 
-    if (!this.dbs.has(dbKey)) {
+    if (!this.dbs[dbKey]) {
       const tablePath = join(this.baseDataPath, databaseId, `${tableName}.json`)
-      const adapter = new JSONFile<DocumentData[]>(tablePath)
-      const db = new Low(adapter, [])
+      const adapter = new JSONFile<Record<string, DocumentData>>(tablePath)
+      const db = new Low(adapter, {})
 
       await db.read()
 
       if (db.data === null) {
-        db.data = []
+        db.data = {}
         await db.write()
       }
 
-      this.dbs.set(dbKey, db)
+      this.dbs[dbKey] = db
     }
 
-    return this.dbs.get(dbKey)!
+    return this.dbs[dbKey]!
   }
 
   private getGenerator(databaseId: string): DatabaseGenerator {
@@ -115,12 +160,12 @@ export class DatabaseService {
   }
 
   // Table operations
-  async createDatabaseTable(databaseId: string, Table: Table): Promise<boolean> {
+  async createDatabaseTable(databaseId: string, tableConfig: Table): Promise<boolean> {
     try {
       const generator = this.getGenerator(databaseId)
-      generator.registerTable(Table)
+      generator.registerTable(tableConfig)
 
-      await this.initializeTable(databaseId, Table.name)
+      await this.initializeTable(databaseId, tableConfig.name)
       return true
     } catch (error) {
       console.error('Error creating table:', error)
@@ -128,7 +173,7 @@ export class DatabaseService {
     }
   }
 
-  // Data operations
+  // Data operations - Dioptimasi untuk pencarian berdasarkan _id
   async find(
     databaseId: string,
     tableName: string,
@@ -138,7 +183,8 @@ export class DatabaseService {
     this.getGenerator(databaseId)
 
     const db = await this.getDatabase(databaseId, tableName)
-    let data = _.cloneDeep(db.data || [])
+    // Convert dari Record ke array untuk filtering
+    let data = Object.values(db.data || {})
 
     if (!_.isEmpty(query)) {
       data = _.filter(data, (item) => {
@@ -181,11 +227,12 @@ export class DatabaseService {
     return _.first(results) || null
   }
 
+  // Dioptimasi: langsung akses berdasarkan _id
   async findById(databaseId: string, tableName: string, id: string): Promise<DocumentData | null> {
     this.getGenerator(databaseId)
 
     const db = await this.getDatabase(databaseId, tableName)
-    return _.find(db.data, { _id: id }) || null
+    return db.data?.[id] || null
   }
 
   async findByField(
@@ -197,7 +244,8 @@ export class DatabaseService {
     this.getGenerator(databaseId)
 
     const db = await this.getDatabase(databaseId, tableName)
-    return _.filter(db.data, (item) => _.get(item, field) === value)
+    const data = Object.values(db.data || {})
+    return _.filter(data, (item) => _.get(item, field) === value)
   }
 
   async search(
@@ -210,7 +258,7 @@ export class DatabaseService {
     this.getGenerator(databaseId)
 
     const db = await this.getDatabase(databaseId, tableName)
-    let data = db.data || []
+    let data = Object.values(db.data || {})
 
     if (searchTerm && fields.length > 0) {
       const searchRegex = new RegExp(_.escapeRegExp(searchTerm), 'i')
@@ -245,7 +293,7 @@ export class DatabaseService {
       this.getGenerator(databaseId)
 
       const db = await this.getDatabase(databaseId, tableName)
-      let data = _.cloneDeep(db.data || [])
+      let data = Object.values(_.cloneDeep(db.data || {}))
 
       for (const stage of pipeline) {
         if (stage.$match) {
@@ -601,7 +649,13 @@ export class DatabaseService {
         ...data
       }) as DocumentData
 
-      db.data.push(validatedData)
+      // Pastikan _id ada
+      if (!validatedData._id) {
+        validatedData._id = crypto.randomUUID()
+      }
+
+      // Simpan dengan _id sebagai key
+      db.data[validatedData._id] = validatedData
       await db.write()
 
       return validatedData
@@ -620,15 +674,24 @@ export class DatabaseService {
       const generator = this.getGenerator(databaseId)
       const db = await this.getDatabase(databaseId, tableName)
 
-      const validatedItems = items.map(
-        (item) =>
-          generator.validateData(tableName, {
-            ...generator.extractDefaults(tableName),
-            ...item
-          }) as DocumentData
-      )
+      const validatedItems = items.map((item) => {
+        const validated = generator.validateData(tableName, {
+          ...generator.extractDefaults(tableName),
+          ...item
+        }) as DocumentData
 
-      db.data.push(...validatedItems)
+        // Pastikan _id ada
+        if (!validated._id) {
+          validated._id = crypto.randomUUID()
+        }
+        return validated
+      })
+
+      // Tambahkan semua items dengan _id sebagai key
+      for (const item of validatedItems) {
+        db.data[item._id ?? `created_${crypto.randomUUID()}`] = item
+      }
+
       await db.write()
 
       return validatedItems
@@ -638,17 +701,16 @@ export class DatabaseService {
     }
   }
 
-  async update(databaseId: string, databaseName: string, id: string, data: any): Promise<any> {
+  async update(databaseId: string, tableName: string, id: string, data: any): Promise<any> {
     try {
       const generator = this.getGenerator(databaseId)
-      const db = await this.getDatabase(databaseId, databaseName)
+      const db = await this.getDatabase(databaseId, tableName)
 
-      const index = _.findIndex(db.data, { _id: id })
-      if (index === -1) {
+      const existingData = db.data[id]
+      if (!existingData) {
         throw new Error('Document not found')
       }
 
-      const existingData = db.data[index]
       const updatedData = {
         ...existingData,
         ...data,
@@ -656,9 +718,9 @@ export class DatabaseService {
       }
 
       // Validasi data yang diupdate
-      const validatedData = generator.validateData(databaseName, updatedData)
+      const validatedData = generator.validateData(tableName, updatedData)
 
-      db.data[index] = validatedData
+      db.data[id] = validatedData
       await db.write()
 
       return validatedData
@@ -670,28 +732,28 @@ export class DatabaseService {
 
   async updateMany(
     databaseId: string,
-    databaseName: string,
+    tableName: string,
     query: any,
     update: any
   ): Promise<number> {
     try {
       const generator = this.getGenerator(databaseId)
-      const db = await this.getDatabase(databaseId, databaseName)
+      const db = await this.getDatabase(databaseId, tableName)
 
-      const itemsToUpdate = _.filter(db.data, query)
+      const dataArray = Object.values(db.data || {})
+      const itemsToUpdate = _.filter(dataArray, query)
       let updateCount = 0
 
       for (const item of itemsToUpdate) {
-        const index = _.findIndex(db.data, { _id: item._id })
-        if (index !== -1) {
+        if (item._id && db.data[item._id]) {
           const updatedData = {
             ...item,
             ...update,
             _updatedAt: new Date()
           }
 
-          const validatedData = generator.validateData(databaseName, updatedData)
-          db.data[index] = validatedData
+          const validatedData = generator.validateData(tableName, updatedData)
+          db.data[item._id] = validatedData
           updateCount++
         }
       }
@@ -707,23 +769,23 @@ export class DatabaseService {
     }
   }
 
-  async delete(databaseId: string, databaseName: string, id: string): Promise<boolean> {
+  async delete(databaseId: string, tableName: string, id: string): Promise<boolean> {
     try {
       const generator = this.getGenerator(databaseId)
-      const db = await this.getDatabase(databaseId, databaseName)
-      const table = generator.getTable(databaseName)
+      const db = await this.getDatabase(databaseId, tableName)
+      const table = generator.getTable(tableName)
 
-      const index = _.findIndex(db.data, { _id: id })
-      if (index === -1) {
+      const existingData = db.data[id]
+      if (!existingData) {
         return false
       }
 
       if (table?.softDelete) {
         // Soft delete
-        db.data[index]._deletedAt = new Date()
+        db.data[id]._deletedAt = new Date()
       } else {
         // Hard delete
-        _.pullAt(db.data, index)
+        delete db.data[id]
       }
 
       await db.write()
@@ -734,29 +796,33 @@ export class DatabaseService {
     }
   }
 
-  async deleteMany(databaseId: string, databaseName: string, query: any): Promise<number> {
+  async deleteMany(databaseId: string, tableName: string, query: any): Promise<number> {
     try {
       const generator = this.getGenerator(databaseId)
-      const db = await this.getDatabase(databaseId, databaseName)
-      const table = generator.getTable(databaseName)
+      const db = await this.getDatabase(databaseId, tableName)
+      const table = generator.getTable(tableName)
+      const dataArray = Object.values(db.data || {})
 
-      const itemsToDelete = _.filter(db.data, query)
+      const itemsToDelete = _.filter(dataArray, query)
       let deleteCount = 0
 
       if (table?.softDelete) {
         // Soft delete
         const now = new Date()
         for (const item of itemsToDelete) {
-          const index = _.findIndex(db.data, { _id: item._id })
-          if (index !== -1) {
-            db.data[index]._deletedAt = now
+          if (item._id && db.data[item._id]) {
+            db.data[item._id]._deletedAt = now
             deleteCount++
           }
         }
       } else {
         // Hard delete
-        db.data = _.reject(db.data, query)
-        deleteCount = itemsToDelete.length
+        for (const item of itemsToDelete) {
+          if (item._id && db.data[item._id]) {
+            delete db.data[item._id]
+            deleteCount++
+          }
+        }
       }
 
       if (deleteCount > 0) {
@@ -770,35 +836,35 @@ export class DatabaseService {
     }
   }
 
-  // Utility methods dengan Lodash
-  async count(databaseId: string, databaseName: string, query: any = {}): Promise<number> {
-    // Validasi database sudah diinisialisasi
+  // Utility methods dengan optimasi
+  async count(databaseId: string, tableName: string, query: any = {}): Promise<number> {
     this.getGenerator(databaseId)
 
-    const db = await this.getDatabase(databaseId, databaseName)
-    return _.size(_.filter(db.data, query))
+    const db = await this.getDatabase(databaseId, tableName)
+    const dataArray = Object.values(db.data || {})
+    return _.size(_.filter(dataArray, query))
   }
 
   async distinct(
     databaseId: string,
-    databaseName: string,
+    tableName: string,
     field: string,
     query: any = {}
   ): Promise<any[]> {
-    // Validasi database sudah diinisialisasi
     this.getGenerator(databaseId)
 
-    const db = await this.getDatabase(databaseId, databaseName)
-    const filteredData = _.filter(db.data, query)
+    const db = await this.getDatabase(databaseId, tableName)
+    const dataArray = Object.values(db.data || {})
+    const filteredData = _.filter(dataArray, query)
     return _.uniq(_.map(filteredData, field))
   }
 
-  async exists(databaseId: string, databaseName: string, query: any): Promise<boolean> {
-    // Validasi database sudah diinisialisasi
+  async exists(databaseId: string, tableName: string, query: any): Promise<boolean> {
     this.getGenerator(databaseId)
 
-    const db = await this.getDatabase(databaseId, databaseName)
-    return _.some(db.data, query)
+    const db = await this.getDatabase(databaseId, tableName)
+    const dataArray = Object.values(db.data || {})
+    return _.some(dataArray, query)
   }
 
   // Schema operations
@@ -820,27 +886,26 @@ export class DatabaseService {
   // Database management utilities
   async databaseExists(databaseId: string): Promise<boolean> {
     try {
-      const databasePath = join(this.baseDataPath, databaseId)
-      await access(databasePath, constants.F_OK)
-      return true
+      const metadata = await this.loadDatabaseMetadata()
+      return !!metadata[databaseId]
     } catch {
       return false
     }
   }
 
   async getAllDatabases(): Promise<string[]> {
-    return Array.from(this.generators.keys())
+    const metadata = await this.loadDatabaseMetadata()
+    return Object.keys(metadata)
   }
 
   async closeDatabase(databaseId: string): Promise<void> {
-    const keysToRemove: string[] = []
-    this.dbs.forEach((_, key) => {
+    // Hapus dari memory
+    Object.keys(this.dbs).forEach((key) => {
       if (key.startsWith(`${databaseId}_`)) {
-        keysToRemove.push(key)
+        delete this.dbs[key]
       }
     })
 
-    _.forEach(keysToRemove, (key) => this.dbs.delete(key))
     this.generators.delete(databaseId)
   }
 }
