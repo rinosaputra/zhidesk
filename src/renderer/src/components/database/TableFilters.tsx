@@ -44,7 +44,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({ filters, onFiltersCh
       </div>
 
       {filters.length === 0 ? (
-        <div className="text-center text-gray-500 p-8 border rounded-lg">
+        <div className="text-center p-8 border rounded-lg">
           No filters applied. Add filters to narrow down your results.
         </div>
       ) : (

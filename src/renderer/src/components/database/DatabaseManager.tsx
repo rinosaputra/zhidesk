@@ -52,6 +52,32 @@ export const DatabaseManager: React.FC = () => {
 
   const queryClient = useQueryClient()
 
+  // Init
+  const init = useQuery(
+    {
+      queryKey: database.initialize.queryKey(),
+      queryFn: () =>
+        database.initialize.call({
+          databaseId: 'default',
+          databaseName: 'Default',
+          tables: []
+        })
+    }
+    // database.initialize.queryOptions({
+    //   input: {
+    //     databaseId: 'default',
+    //     databaseName: 'Default',
+    //     tables: [],
+    //     description: ''
+    //   },
+    //   initialData: {
+    //     success: false,
+    //     error: ''
+    //   },
+    //   context: {}
+    // })
+  )
+
   // Fetch all tables
   const {
     data: tables = [],
@@ -219,15 +245,16 @@ export const DatabaseManager: React.FC = () => {
 
   const selectedTableData = tables.find((t) => t.name === selectedTable)
 
+  if (!init.data?.success) return null
   return (
     <div className="flex h-screen">
       {/* Sidebar - Table List */}
-      <div className="w-64 border-r bg-secondary">
+      <div className="w-64 md:w-72 border-r bg-secondary">
         <div className="p-4 border-b border-input">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Database Studio
+              <Database className="size-5" />
+              <span className="text-ellipsis">Database Studio</span>
             </h2>
           </div>
 

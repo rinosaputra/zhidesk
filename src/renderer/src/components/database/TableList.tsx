@@ -1,7 +1,10 @@
 // File: src/renderer/src/components/database/TableList.tsx
 import React from 'react'
-import { Table, Loader2 } from 'lucide-react'
+import { Table, Loader2, Info } from 'lucide-react'
 import { Table as DatabaseTable } from './types'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@renderer/components/ui/hover-card'
+import { Button } from '@renderer/components/ui/button'
+import { Badge } from '../ui/badge'
 
 interface TableListProps {
   tables: DatabaseTable[]
@@ -29,22 +32,31 @@ export const TableList: React.FC<TableListProps> = ({
       {tables.map((table) => (
         <div
           key={table.name}
-          className={`p-3 rounded-lg cursor-pointer transition-colors mb-1 ${
+          className={`p-3 py-2 rounded-lg cursor-pointer transition-colors mb-1 ${
             selectedTable === table.name
-              ? 'bg-blue-100 text-blue-800 border border-blue-300'
-              : 'hover:bg-gray-100'
+              ? 'bg-primary'
+              : 'hover:bg-primary/10'
           }`}
           onClick={() => onSelectTable(table.name)}
         >
-          <div className="flex items-center gap-3">
-            <Table className="h-4 w-4 flex-shrink-0" />
+          <div className="flex items-center gap-2">
+            <Table className="size-4 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <div className="font-medium truncate">{table.label}</div>
-              <div className="text-sm text-gray-600 truncate">{table.name}</div>
+              {/* <div className="font-medium truncate">{table.label}</div> */}
+              <div className="text-sm truncate">{table.name}</div>
             </div>
-            <div className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
-              {table.fields.length} fields
-            </div>
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <Info className="size-4" />
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold">{table.label}</h4>
+                  <p className="text-sm">{table.description}</p>
+                  <Badge>{table.fields.length} fields</Badge>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
           </div>
         </div>
       ))}

@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // File: src/service/database/generator.ts
 import { z } from 'zod'
+import { v4 as uuidv4 } from 'uuid' // Tambahkan import UUID
 import {
   Field,
   Table,
@@ -77,7 +78,7 @@ export class DatabaseGenerator {
     }
 
     // Tambahkan ID field
-    shape._id = z.uuid().default(() => this.generateId())
+    shape._id = z.string().default(() => this.generateId()) // Not z.uuid() for tester
 
     let tableSchema = z.object(shape)
 
@@ -279,7 +280,7 @@ export class DatabaseGenerator {
 
   // Utility methods
   private generateId(): string {
-    return crypto.randomUUID()
+    return uuidv4()
   }
 
   extractDefaults(tableName: string): Record<string, any> {

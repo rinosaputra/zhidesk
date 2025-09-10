@@ -98,9 +98,15 @@ export const databaseRouter = {
     .handler(async ({ input }) => {
       try {
         const db = DatabaseService.getInstance()
-        await db.initializeDatabase(input.databaseId, input.databaseName, input.tables || [])
+        const success = await db.initializeDatabase(
+          input.databaseId,
+          input.databaseName,
+          input.tables || []
+        )
+
         return {
-          success: true
+          success: success,
+          error: success ? undefined : 'Failed to initialize database'
         }
       } catch (error) {
         return {
@@ -137,7 +143,6 @@ export const databaseRouter = {
       try {
         const db = DatabaseService.getInstance()
         const tables = db.getAllDatabaseTables(input.databaseId)
-        console.log({ tables })
         return {
           success: true,
           tables

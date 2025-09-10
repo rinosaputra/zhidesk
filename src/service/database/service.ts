@@ -4,12 +4,14 @@
 import { Low } from 'lowdb'
 import { JSONFile } from 'lowdb/node'
 import { join, dirname } from 'path'
-import { mkdir, access, constants, readFile, writeFile } from 'fs/promises'
+import { access, constants, readFile, writeFile } from 'fs/promises'
 import _ from 'lodash'
 import { DatabaseGenerator } from './generator'
 import { exampleUserTable, examplePostTable } from './examples'
 import { Database, Table } from './types'
 import { AggregationStage, DocumentData, QueryOptions, SearchOptions } from './types'
+import { v4 as uuidv4 } from 'uuid' // Tambahkan import UUID
+import { DatabaseUtils } from './utils'
 
 // ==================== DATABASE SERVICE ====================
 
@@ -17,11 +19,11 @@ export class DatabaseService {
   private static instance: DatabaseService
   private dbs: Record<string, Low<Record<string, DocumentData>>> = {}
   private generators: Map<string, DatabaseGenerator> = new Map()
-  private baseDataPath: string = 'data'
+  private baseDataPath: string = DatabaseUtils.getBaseDataPath()
   private databaseMetadataPath: string = join(this.baseDataPath, 'database.json')
 
   private constructor() {
-    this.initializeBaseDirectories()
+    this.initializeBaseDirectories().catch(console.error)
   }
 
   static getInstance(): DatabaseService {
@@ -33,7 +35,7 @@ export class DatabaseService {
 
   private async initializeBaseDirectories(): Promise<void> {
     try {
-      await mkdir(this.baseDataPath, { recursive: true })
+      await DatabaseUtils.ensureDirectoryExists(this.baseDataPath)
 
       // Initialize database metadata file jika belum ada
       try {
@@ -43,6 +45,7 @@ export class DatabaseService {
       }
     } catch (error) {
       console.error('Error creating base data directory:', error)
+      throw error // Propagate error
     }
   }
 
@@ -60,9 +63,11 @@ export class DatabaseService {
   // Save database metadata
   private async saveDatabaseMetadata(metadata: Record<string, Database>): Promise<void> {
     try {
+      await DatabaseUtils.ensureDirectoryExists(dirname(this.databaseMetadataPath))
       await writeFile(this.databaseMetadataPath, JSON.stringify(metadata, null, 2))
     } catch (error) {
       console.error('Error saving database metadata:', error)
+      throw error
     }
   }
 
@@ -71,15 +76,18 @@ export class DatabaseService {
     databaseId: string,
     databaseName: string,
     tables: Table[] = []
-  ): Promise<void> {
+  ): Promise<boolean> {
     const databasePath = join(this.baseDataPath, databaseId)
 
     try {
-      await mkdir(databasePath, { recursive: true })
+      await DatabaseUtils.ensureDirectoryExists(databasePath)
+
+      // Gabungkan dengan contoh tables jika diperlukan
+      const allTables = tables.length > 0 ? tables : [exampleUserTable, examplePostTable]
 
       const generator = new DatabaseGenerator({
         name: databaseName,
-        tables: [...tables, exampleUserTable, examplePostTable] as Table[]
+        tables: allTables
       })
 
       this.generators.set(databaseId, generator)
@@ -98,9 +106,12 @@ export class DatabaseService {
 
       await this.saveDatabaseMetadata(metadata)
 
+      // Initialize semua tables
       for (const table of generator.getAllTables()) {
         await this.initializeTable(databaseId, table.name)
       }
+
+      return true
     } catch (error) {
       console.error(`Error initializing database ${databaseId}:`, error)
       throw error
@@ -111,10 +122,11 @@ export class DatabaseService {
     const tablePath = join(this.baseDataPath, databaseId, `${tableName}.json`)
 
     try {
-      await mkdir(dirname(tablePath), { recursive: true })
+      await DatabaseUtils.ensureDirectoryExists(dirname(tablePath))
 
       try {
         await access(tablePath, constants.F_OK)
+        // File sudah ada, tidak perlu diinisialisasi ulang
       } catch {
         const adapter = new JSONFile<Record<string, DocumentData>>(tablePath)
         const db = new Low(adapter, {})
@@ -135,10 +147,20 @@ export class DatabaseService {
 
     if (!this.dbs[dbKey]) {
       const tablePath = join(this.baseDataPath, databaseId, `${tableName}.json`)
+
+      // Pastikan direktori ada
+      await DatabaseUtils.ensureDirectoryExists(dirname(tablePath))
+
       const adapter = new JSONFile<Record<string, DocumentData>>(tablePath)
       const db = new Low(adapter, {})
 
-      await db.read()
+      try {
+        await db.read()
+      } catch (error) {
+        console.warn(`Database file ${tablePath} not found, creating new one`, error)
+        db.data = {}
+        await db.write()
+      }
 
       if (db.data === null) {
         db.data = {}
@@ -154,7 +176,7 @@ export class DatabaseService {
   private getGenerator(databaseId: string): DatabaseGenerator {
     const generator = this.generators.get(databaseId)
     if (!generator) {
-      throw new Error(`Database ${databaseId} not initialized`)
+      throw new Error(`Database ${databaseId} not initialized. Call initializeDatabase first.`)
     }
     return generator
   }
@@ -649,10 +671,16 @@ export class DatabaseService {
         ...data
       }) as DocumentData
 
-      // Pastikan _id ada
+      // Pastikan _id ada menggunakan uuidv4
       if (!validatedData._id) {
-        validatedData._id = crypto.randomUUID()
+        validatedData._id = uuidv4()
       }
+
+      // Tambahkan timestamp
+      if (validatedData._createdAt === undefined) {
+        validatedData._createdAt = new Date()
+      }
+      validatedData._updatedAt = new Date()
 
       // Simpan dengan _id sebagai key
       db.data[validatedData._id] = validatedData
@@ -680,16 +708,23 @@ export class DatabaseService {
           ...item
         }) as DocumentData
 
-        // Pastikan _id ada
+        // Pastikan _id ada menggunakan uuidv4
         if (!validated._id) {
-          validated._id = crypto.randomUUID()
+          validated._id = uuidv4()
         }
+
+        // Tambahkan timestamp
+        if (validated._createdAt === undefined) {
+          validated._createdAt = new Date()
+        }
+        validated._updatedAt = new Date()
+
         return validated
       })
 
       // Tambahkan semua items dengan _id sebagai key
       for (const item of validatedItems) {
-        db.data[item._id ?? `created_${crypto.randomUUID()}`] = item
+        db.data[item._id!] = item
       }
 
       await db.write()

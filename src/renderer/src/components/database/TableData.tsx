@@ -115,7 +115,7 @@ export const TableData: React.FC<TableDataProps> = ({
   return (
     <div className="space-y-4">
       {/* Add Record Form */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="p-4 rounded-lg">
         <h3 className="font-semibold mb-3">Add New Record</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {displayedFields.map((field) => (
@@ -147,7 +147,7 @@ export const TableData: React.FC<TableDataProps> = ({
       </div>
 
       {/* Data Table */}
-      <div className="border rounded-lg bg-white overflow-x-auto">
+      <div className="border rounded-lg overflow-x-auto">
         <TableUI>
           <TableHeader>
             <TableRow>

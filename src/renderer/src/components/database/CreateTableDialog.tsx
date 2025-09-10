@@ -27,7 +27,6 @@ import {
 import { Plus, X, Save, Table, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { database } from '@renderer/lib/orpc-query'
-import { Table as CreateTableFormData } from './types'
 import { FieldEditor } from './FieldEditor'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useFieldArray, useForm } from 'react-hook-form'
@@ -54,27 +53,7 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ open, onOp
   })
   const columns = useFieldArray({ control: form.control, name: 'fields' })
 
-  const { isPending, mutate } = useMutation({
-    mutationFn: async (tableConfig: CreateTableFormData) => {
-      const result = await database.table.create.call({
-        databaseId: 'default',
-        tableConfig
-      })
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create table')
-      }
-      return result
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['database', 'tables'] })
-      toast.success('Table created successfully')
-      onOpenChange(false)
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to create table: ${error.message}`)
-    }
-  })
+  const { isPending, mutateAsync } = useMutation(database.table.create.mutationOptions())
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,11 +130,11 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ open, onOp
                     onClick={() =>
                       columns.append({
                         type: 'string',
-                        label: '',
                         name: '',
-                        coerce: false,
-                        default: '',
+                        label: '',
                         description: '',
+                        default: '',
+                        coerce: false,
                         hidden: false,
                         index: false,
                         readonly: false,
@@ -263,7 +242,29 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ open, onOp
             <Button
               type="submit"
               disabled={isPending}
-              onClick={form.handleSubmit((data) => mutate(data), console.log)}
+              onClick={form.handleSubmit(async (data) => {
+                toast.promise(
+                  () =>
+                    mutateAsync({
+                      databaseId: 'default',
+                      tableConfig: data
+                    }),
+                  {
+                    loading: `Creating...`,
+                    success: (data) => {
+                      if (data.error) return `Failed to create table: ${data.error}`
+                      queryClient.invalidateQueries({
+                        queryKey: database.table.getAll.queryKey({
+                          input: { databaseId: 'default' }
+                        })
+                      })
+                      onOpenChange(false)
+                      return `Table created successfully`
+                    },
+                    error: (error: Error) => `Failed to create table: ${error.message}`
+                  }
+                )
+              }, console.log)}
             >
               {isPending ? (
                 <>

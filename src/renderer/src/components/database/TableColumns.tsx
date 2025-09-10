@@ -16,12 +16,13 @@ interface TableColumnsProps {
 }
 
 export const TableColumns: React.FC<TableColumnsProps> = ({ table }) => {
+    return <div className="text-center p-8">Select a table to view columns</div>
   if (!table) {
-    return <div className="text-center text-gray-500 p-8">Select a table to view columns</div>
+    return <div className="text-center p-8">Select a table to view columns</div>
   }
 
   return (
-    <div className="border rounded-lg bg-white">
+    <div className="border rounded-lg">
       <TableUI>
         <TableHeader>
           <TableRow>

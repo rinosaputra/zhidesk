@@ -1,13 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-window.addEventListener('message', (event) => {
-  if (event.data === 'start-orpc-client') {
-    const [serverPort] = event.ports
-    ipcRenderer.postMessage('start-orpc-server', null, [serverPort])
-  }
-})
-
 // Custom APIs for renderer
 const api = {}
 
@@ -27,3 +20,10 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.api = api
 }
+
+window.addEventListener('message', (event) => {
+  if (event.data === 'start-orpc-client') {
+    const [serverPort] = event.ports
+    ipcRenderer.postMessage('start-orpc-server', null, [serverPort])
+  }
+})
