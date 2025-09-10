@@ -57,17 +57,12 @@ export const DatabaseManager: React.FC = () => {
     data: tables = [],
     isLoading: loadingTables,
     error: tablesError
-  } = useQuery({
-    queryKey: ['database', 'tables'],
-    queryFn: async () => {
-      const result = await database.table.getAll.call({ databaseId: 'default' })
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch tables')
-      }
-      return result.tables || []
-    },
-    retry: 2
-  })
+  } = useQuery(
+    database.table.getAll.queryOptions({
+      input: { databaseId: 'default' },
+      select: (data) => data.tables ?? []
+    })
+  )
 
   // Build query object from filters
   const buildQuery = (): QueryObject => {

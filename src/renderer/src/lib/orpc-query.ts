@@ -4,9 +4,7 @@ import { getORPCClient } from './orpc-client'
 
 const client = getORPCClient()
 
-export const orpc = createTanstackQueryUtils(client, {
-  path: ['zhidesk', 'v1']
-})
+export const orpc = createTanstackQueryUtils(client)
 
 // Export individual database utilities untuk easier access
 export const database = {

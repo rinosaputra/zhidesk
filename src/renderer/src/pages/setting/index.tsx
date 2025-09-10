@@ -33,6 +33,8 @@ import {
   Upload
 } from 'lucide-react'
 import useThemeStore from '@renderer/components/theme/store'
+import { useQuery } from '@tanstack/react-query'
+import { orpc } from '@renderer/lib/orpc-query'
 
 const SelectTheme: React.FC = () => {
   const { setTheme, theme } = useThemeStore()
@@ -55,6 +57,7 @@ const SelectTheme: React.FC = () => {
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('general')
+  const { isLoading, data } = useQuery(orpc.example.queryOptions({ input: { call: 'A' } }))
 
   // Default values from store or local storage
   const [settings, setSettings] = useState({
@@ -85,7 +88,9 @@ const SettingsPage: React.FC = () => {
       <div className="flex items-center gap-4">
         <Settings className="w-8 h-8" />
         <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
+          <h1 className="text-3xl font-bold">
+            Settings ({isLoading ? 'Loading' : 'Tidak'}: {data?.input})
+          </h1>
           <p className="text-muted-foreground">Kelola pengaturan aplikasi Zhidesk</p>
         </div>
       </div>

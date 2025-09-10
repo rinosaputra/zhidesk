@@ -30,6 +30,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@hookform/resolvers": "^5.2.1",
     "@orpc/client": "^1.8.6",
+    "@orpc/json-schema": "^1.8.7",
     "@orpc/server": "^1.8.6",
     "@orpc/tanstack-query": "^1.8.6",
     "@radix-ui/react-accordion": "^1.2.12",

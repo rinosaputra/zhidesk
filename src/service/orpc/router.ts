@@ -5,7 +5,7 @@ import { databaseRouter } from '../database/router'
 
 // Inisialisasi DocGenerator
 
-export const oRPCRouter = {
+export const router = {
   // Contoh existing route
   example: os
     .input(
@@ -30,4 +30,4 @@ export const oRPCRouter = {
   database: databaseRouter
 }
 
-export type oRPCRouter = typeof oRPCRouter
+export type Router = typeof router

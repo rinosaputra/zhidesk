@@ -137,6 +137,7 @@ export const databaseRouter = {
       try {
         const db = DatabaseService.getInstance()
         const tables = db.getAllDatabaseTables(input.databaseId)
+        console.log({ tables })
         return {
           success: true,
           tables

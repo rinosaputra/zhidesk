@@ -2,7 +2,7 @@
 import { z } from 'zod'
 
 const zBool = (defaultValue: boolean): z.ZodOptional<z.ZodDefault<z.ZodBoolean>> =>
-  z
+  z.coerce
     .boolean()
     .default(defaultValue)
     .optional()
@@ -41,9 +41,9 @@ export const StringFieldSchema = BaseFieldSchema.extend({
   type: z.literal('string'),
   validation: z
     .object({
-      min: z.number().min(0).optional(),
-      max: z.number().min(1).optional(),
-      length: z.number().min(0).optional(),
+      min: z.coerce.number().optional(),
+      max: z.coerce.number().optional(),
+      length: z.coerce.number().optional(),
       pattern: z.string().optional(),
       format: z.enum(['email', 'url', 'uuid', 'phone', 'password', 'string']).optional(),
       trim: zBool(true)
@@ -56,12 +56,12 @@ export const NumberFieldSchema = BaseFieldSchema.extend({
   type: z.literal('number'),
   validation: z
     .object({
-      min: z.number().optional(),
-      max: z.number().optional(),
+      min: z.coerce.number().optional(),
+      max: z.coerce.number().optional(),
       integer: zBool(false),
       positive: zBool(false),
       nonnegative: zBool(false),
-      multipleOf: z.number().optional()
+      multipleOf: z.coerce.number().optional()
     })
     .optional()
 })
@@ -124,9 +124,9 @@ export const ArrayFieldSchema: z.ZodType<ArrayField> = z.lazy(() =>
     items: FieldSchema, // Recursive
     validation: z
       .object({
-        min: z.number().min(0).optional(),
-        max: z.number().min(1).optional(),
-        length: z.number().min(0).optional(),
+        min: z.coerce.number().optional(),
+        max: z.coerce.number().optional(),
+        length: z.coerce.number().optional(),
         unique: zBool(false)
       })
       .optional()
@@ -182,7 +182,7 @@ export const TableSchema = z.object({
 // Database schema
 export const DatabaseSchema = z.object({
   name: z.string().min(1, 'Database name is required'),
-  version: z.number().default(1),
+  version: z.coerce.number().default(1),
   tables: z.array(TableSchema).min(1, 'At least one table is required'),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date())
@@ -258,8 +258,8 @@ export const tableConfig = TableSchema
 
 // Query options
 export const queryOptions = z.object({
-  skip: z.number().int().nonnegative().optional(),
-  limit: z.number().int().positive().optional(),
+  skip: z.coerce.number().int().nonnegative().optional(),
+  limit: z.coerce.number().int().positive().optional(),
   sort: z.record(z.string(), z.union([z.literal(1), z.literal(-1)])).optional()
 })
 
@@ -292,11 +292,11 @@ export const projectStage = z.object({
 })
 
 export const skipStage = z.object({
-  $skip: z.number().int().nonnegative()
+  $skip: z.coerce.number().int().nonnegative()
 })
 
 export const limitStage = z.object({
-  $limit: z.number().int().positive()
+  $limit: z.coerce.number().int().positive()
 })
 
 export const unwindStage = z.object({
@@ -567,7 +567,7 @@ export const updateOutput = baseResponse.extend({
 export type UpdateOutput = z.infer<typeof updateOutput>
 
 export const updateManyOutput = baseResponse.extend({
-  count: z.number().int().nonnegative().optional()
+  count: z.coerce.number().int().nonnegative().optional()
 })
 export type UpdateManyOutput = z.infer<typeof updateManyOutput>
 
@@ -577,12 +577,12 @@ export const deleteOutput = baseResponse.extend({
 export type DeleteOutput = z.infer<typeof deleteOutput>
 
 export const deleteManyOutput = baseResponse.extend({
-  count: z.number().int().nonnegative().optional()
+  count: z.coerce.number().int().nonnegative().optional()
 })
 export type DeleteManyOutput = z.infer<typeof deleteManyOutput>
 
 export const countOutput = baseResponse.extend({
-  count: z.number().int().nonnegative()
+  count: z.coerce.number().int().nonnegative()
 })
 export type CountOutput = z.infer<typeof countOutput>
 

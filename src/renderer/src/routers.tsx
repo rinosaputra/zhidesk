@@ -140,6 +140,13 @@ export const routers = createBrowserRouter([
       //   })
       // },
 
+      {
+        path: ROUTES.SETTINGS.$path(),
+        lazy: async () => ({
+          Component: (await import('./pages/setting')).default,
+          loading: RouteLoading
+        })
+      },
       // // Settings Routes
       // {
       //   path: ROUTES.SETTINGS.$path(),

@@ -2,7 +2,7 @@
 import { createORPCClient } from '@orpc/client'
 import { RPCLink } from '@orpc/client/message-port'
 import { RouterClient } from '@orpc/server'
-import type { oRPCRouter as Router } from '@service/orpc/router'
+import type { Router } from '@service/orpc/router'
 
 let orpcClient: RouterClient<Router>
 
@@ -12,7 +12,7 @@ export const getORPCClient = (): typeof orpcClient => {
     const { port1: clientPort, port2: serverPort } = new MessageChannel()
 
     // Send server port ke preload script
-    window.postMessage({ type: 'start-orpc-client' }, '*', [serverPort])
+    window.postMessage('start-orpc-client', '*', [serverPort])
 
     // Create RPC link
     const link = new RPCLink({

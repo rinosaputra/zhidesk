@@ -54,7 +54,7 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ open, onOp
   })
   const columns = useFieldArray({ control: form.control, name: 'fields' })
 
-  const createTableMutation = useMutation({
+  const { isPending, mutate } = useMutation({
     mutationFn: async (tableConfig: CreateTableFormData) => {
       const result = await database.table.create.call({
         databaseId: 'default',
@@ -105,7 +105,7 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ open, onOp
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>Name *</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g., users, products, orders" {...field} />
                         </FormControl>
@@ -118,7 +118,7 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ open, onOp
                     name="label"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>Label *</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g., Users, Products, Orders" {...field} />
                         </FormControl>
@@ -130,12 +130,12 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ open, onOp
 
                 <FormField
                   control={form.control}
-                  name="label"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="e.g., Users, Products, Orders" {...field} rows={3} />
+                        <Textarea {...field} rows={3} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -260,8 +260,12 @@ export const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ open, onOp
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createTableMutation.isPending}>
-              {createTableMutation.isPending ? (
+            <Button
+              type="submit"
+              disabled={isPending}
+              onClick={form.handleSubmit((data) => mutate(data), console.log)}
+            >
+              {isPending ? (
                 <>
                   <Loader2 className="h-6 w-6 animate-spin" />
                   Creating...
