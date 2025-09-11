@@ -54,28 +54,14 @@ export const DatabaseManager: React.FC = () => {
 
   // Init
   const init = useQuery(
-    {
-      queryKey: database.initialize.queryKey(),
-      queryFn: () =>
-        database.initialize.call({
-          databaseId: 'default',
-          databaseName: 'Default',
-          tables: []
-        })
-    }
-    // database.initialize.queryOptions({
-    //   input: {
-    //     databaseId: 'default',
-    //     databaseName: 'Default',
-    //     tables: [],
-    //     description: ''
-    //   },
-    //   initialData: {
-    //     success: false,
-    //     error: ''
-    //   },
-    //   context: {}
-    // })
+    database.initialize.queryOptions({
+      input: {
+        databaseId: 'default',
+        databaseName: 'Default',
+        tables: [],
+        description: ''
+      }
+    })
   )
 
   // Fetch all tables
@@ -229,170 +215,109 @@ export const DatabaseManager: React.FC = () => {
     }
   })
 
-  // Refresh data
-  const handleRefresh = (): void => {
-    queryClient.invalidateQueries({
-      queryKey: ['database', 'table-data', selectedTable]
-    })
-    toast.info('Data refreshed')
-  }
-
-  const filteredTables = tables.filter(
-    (table) =>
-      table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      table.label.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
   const selectedTableData = tables.find((t) => t.name === selectedTable)
 
   if (!init.data?.success) return null
   return (
-    <div className="flex h-screen">
-      {/* Sidebar - Table List */}
-      <div className="w-64 md:w-72 border-r bg-secondary">
-        <div className="p-4 border-b border-input">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold flex items-center gap-2">
-              <Database className="size-5" />
-              <span className="text-ellipsis">Database Studio</span>
-            </h2>
+    <div className="flex-1 flex flex-col">
+      {/* Header */}
+      <div className="border-b p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold">{selectedTableData?.label ?? 'Select a table'}</h1>
+            <p className="text-xs line-clamp-1 overflow-ellipsis">
+              {selectedTableData?.description ?? 'Placeholder'}
+            </p>
           </div>
 
-          <div className="flex flex-row items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4" />
-              <Input
-                placeholder="Search tables..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Button variant="outline" size="icon" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4" />
+              Settings
             </Button>
-            <Creates />
+            <Button size="sm" onClick={() => setActiveTab('data')} disabled={!selectedTable}>
+              <Plus className="h-4 w-4" />
+              Add Record
+            </Button>
           </div>
         </div>
-
-        <ScrollArea className="h-[calc(100vh-120px)]">
-          {tablesError && (
-            <Alert variant="destructive" className="m-2 w-[calc(100%-1rem)]">
-              <AlertCircle />
-              <AlertTitle>Error!</AlertTitle>
-              <AlertDescription>Failed to load tables.</AlertDescription>
-            </Alert>
-          )}
-          <TableList
-            tables={filteredTables}
-            selectedTable={selectedTable}
-            onSelectTable={setSelectedTable}
-            loading={loadingTables}
-          />
-        </ScrollArea>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="border-b p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-bold">{selectedTableData?.label ?? 'Select a table'}</h1>
-              <p className="text-xs line-clamp-1 overflow-ellipsis">
-                {selectedTableData?.description ?? 'Placeholder'}
+      {/* Content */}
+      {!selectedTable ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Card className="w-96">
+            <CardHeader>
+              <CardTitle>Welcome to Database Studio</CardTitle>
+              <CardDescription>
+                Select a table from the sidebar to start managing your data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Database className="h-16 w-16 mx-auto mb-4" />
+              <p className="text-center text-sm">
+                Choose a table to view and edit data, manage columns, or apply filters
               </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4" />
-                Settings
-              </Button>
-              <Button size="sm" onClick={() => setActiveTab('data')} disabled={!selectedTable}>
-                <Plus className="h-4 w-4" />
-                Add Record
-              </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
+      ) : (
+        <div className="flex-1 p-6">
+          {dataError && (
+            <div className="mb-4 p-4 borderrounded-lg text-destructive">
+              <AlertCircle className="h-4 w-4 inline mr-2" />
+              Failed to load table data: {dataError.message}
+            </div>
+          )}
 
-        {/* Content */}
-        {!selectedTable ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Card className="w-96">
-              <CardHeader>
-                <CardTitle>Welcome to Database Studio</CardTitle>
-                <CardDescription>
-                  Select a table from the sidebar to start managing your data
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Database className="h-16 w-16 mx-auto mb-4" />
-                <p className="text-center text-sm">
-                  Choose a table to view and edit data, manage columns, or apply filters
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div className="flex-1 p-6">
-            {dataError && (
-              <div className="mb-4 p-4 borderrounded-lg text-destructive">
-                <AlertCircle className="h-4 w-4 inline mr-2" />
-                Failed to load table data: {dataError.message}
-              </div>
-            )}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="data">
+                <FileText className="h-4 w-4 mr-2" />
+                Data
+              </TabsTrigger>
+              <TabsTrigger value="columns">
+                <Table className="h-4 w-4 mr-2" />
+                Columns
+              </TabsTrigger>
+              <TabsTrigger value="filters">
+                <Search className="h-4 w-4 mr-2" />
+                Filters
+              </TabsTrigger>
+            </TabsList>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="data">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Data
-                </TabsTrigger>
-                <TabsTrigger value="columns">
-                  <Table className="h-4 w-4 mr-2" />
-                  Columns
-                </TabsTrigger>
-                <TabsTrigger value="filters">
-                  <Search className="h-4 w-4 mr-2" />
-                  Filters
-                </TabsTrigger>
-              </TabsList>
+            <TabsContent value="data">
+              <TableData
+                data={tableData?.documents || []}
+                loading={loadingData}
+                table={selectedTableData}
+                pagination={{
+                  ...pagination,
+                  total: tableData?.total || 0
+                }}
+                onPaginationChange={setPagination}
+                onCreateRecord={createMutation.mutateAsync}
+                onUpdateRecord={async (id, data) => {
+                  await updateMutation.mutateAsync({ id, data })
+                }}
+                onDeleteRecord={deleteMutation.mutateAsync}
+              />
+            </TabsContent>
 
-              <TabsContent value="data">
-                <TableData
-                  data={tableData?.documents || []}
-                  loading={loadingData}
-                  table={selectedTableData}
-                  pagination={{
-                    ...pagination,
-                    total: tableData?.total || 0
-                  }}
-                  onPaginationChange={setPagination}
-                  onCreateRecord={createMutation.mutateAsync}
-                  onUpdateRecord={async (id, data) => {
-                    await updateMutation.mutateAsync({ id, data })
-                  }}
-                  onDeleteRecord={deleteMutation.mutateAsync}
-                />
-              </TabsContent>
+            <TabsContent value="columns">
+              <TableColumns table={selectedTableData} />
+            </TabsContent>
 
-              <TabsContent value="columns">
-                <TableColumns table={selectedTableData} />
-              </TabsContent>
-
-              <TabsContent value="filters">
-                <TableFilters
-                  filters={filters}
-                  onFiltersChange={setFilters}
-                  table={selectedTableData}
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
-      </div>
+            <TabsContent value="filters">
+              <TableFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+                table={selectedTableData}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
     </div>
   )
 }

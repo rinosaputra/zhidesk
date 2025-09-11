@@ -9,6 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from '@renderer/components/ui/sidebar'
+import { Link } from 'react-router-dom'
 
 export const NavMain: React.FC<{
   items: {
@@ -43,10 +44,10 @@ export const NavMain: React.FC<{
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={item.url}>
+                <Link to={item.url}>
                   <item.icon className="size-4" />
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

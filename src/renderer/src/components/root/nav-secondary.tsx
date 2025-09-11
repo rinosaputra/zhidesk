@@ -10,6 +10,7 @@ import {
   SidebarMenuItem
 } from '@renderer/components/ui/sidebar'
 import { LucideIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export const NavSecondary: React.FC<
   {
@@ -26,11 +27,11 @@ export const NavSecondary: React.FC<
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.url}>
+              <SidebarMenuButton asChild tooltip={item.title}>
+                <Link to={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

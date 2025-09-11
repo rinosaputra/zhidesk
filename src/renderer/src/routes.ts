@@ -13,30 +13,6 @@ const root = route({
       }
     }),
 
-    // Data Management - Perbaikan struktur
-    data: route({
-      path: 'data',
-      children: {
-        collections: route({ path: '' }),
-        collection: route({
-          path: ':collectionName',
-          params: { collectionName: string() },
-          children: {
-            overview: route({ path: '' }), // List view
-            create: route({ path: 'create' }),
-            edit: route({
-              path: ':id/edit',
-              params: { id: string() }
-            }),
-            view: route({
-              path: ':id',
-              params: { id: string() }
-            })
-          }
-        })
-      }
-    }),
-
     // Form Builder
     forms: route({
       path: 'forms',
@@ -85,7 +61,19 @@ const root = route({
 
     // Database Studio (Tambahkan route baru)
     databaseStudio: route({
-      path: 'database-studio'
+      path: 'database-studio',
+      children: {
+        id: route({
+          path: ':databaseId',
+          params: { databaseId: string() },
+          children: {
+            table: route({
+              path: 'table/:tableId',
+              params: { tableId: string() }
+            })
+          }
+        })
+      }
     }),
 
     // 404
@@ -99,14 +87,6 @@ export const ROUTES = {
   DASHBOARD: root.dashboard,
   DASHBOARD_OVERVIEW: root.dashboard.overview,
   DASHBOARD_ANALYTICS: root.dashboard.analytics,
-
-  DATA: root.data,
-  DATA_COLLECTIONS: root.data.collections,
-  DATA_COLLECTION: root.data.collection,
-  DATA_COLLECTION_OVERVIEW: root.data.collection.overview,
-  DATA_COLLECTION_CREATE: root.data.collection.create,
-  DATA_COLLECTION_EDIT: root.data.collection.edit,
-  DATA_COLLECTION_VIEW: root.data.collection.view,
 
   FORMS: root.forms,
   FORMS_LIST: root.forms.list,
@@ -127,7 +107,10 @@ export const ROUTES = {
   SETTINGS_NOTIFICATIONS: root.settings.notifications,
   SETTINGS_ACCOUNT: root.settings.account,
 
-  DATABASE_STUDIO: root.databaseStudio,
+  DATABASE: root.databaseStudio,
+  DATABASE_ID: root.databaseStudio.id,
+  DATABASE_TABLE_ID: root.databaseStudio.id.table,
+
   NOT_FOUND: root.notFound
 }
 

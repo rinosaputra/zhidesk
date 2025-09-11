@@ -16,7 +16,6 @@ interface TableColumnsProps {
 }
 
 export const TableColumns: React.FC<TableColumnsProps> = ({ table }) => {
-    return <div className="text-center p-8">Select a table to view columns</div>
   if (!table) {
     return <div className="text-center p-8">Select a table to view columns</div>
   }

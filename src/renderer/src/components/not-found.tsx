@@ -1,9 +1,9 @@
 // File: src/renderer/src/pages/not-found.tsx (Alternatif)
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Button } from '../components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { AlertCircle, Home, ArrowLeft, Search, Mail } from 'lucide-react'
+import { Button } from './ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { AlertCircle, Home, ArrowLeft, Mail } from 'lucide-react'
 import { ROUTES } from '../routes'
 
 const NotFoundPage: React.FC = () => {
@@ -12,7 +12,7 @@ const NotFoundPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-blue-50/50 to-muted/50 p-4">
-      <div className="text-center space-y-8">
+      <div className="text-center space-y-8 w-full max-w-md">
         {/* Animated 404 */}
         <div className="relative">
           <div className="text-9xl font-bold text-primary/20 select-none">404</div>
@@ -22,7 +22,7 @@ const NotFoundPage: React.FC = () => {
         </div>
 
         {/* Content */}
-        <Card className="w-full max-w-2xl shadow-xl border-0">
+        <Card className="w-full shadow-xl border-0">
           <CardHeader className="space-y-4">
             <CardTitle className="text-2xl font-bold text-foreground">Page Not Found</CardTitle>
             <CardDescription className="text-lg text-muted-foreground">
@@ -45,7 +45,7 @@ const NotFoundPage: React.FC = () => {
                 Here are some things you can try:
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Button
                   onClick={() => {
                     navigate(-1)
@@ -65,18 +65,6 @@ const NotFoundPage: React.FC = () => {
                 >
                   <Home className="h-5 w-5" />
                   <span className="text-xs">Home Page</span>
-                </Button>
-
-                <Button
-                  onClick={() => {
-                    // Implement search functionality jika needed
-                    navigate(ROUTES.DATA_COLLECTIONS.$path())
-                  }}
-                  variant="secondary"
-                  className="h-14 flex flex-col gap-1"
-                >
-                  <Search className="h-5 w-5" />
-                  <span className="text-xs">Browse Data</span>
                 </Button>
               </div>
             </div>

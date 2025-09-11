@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { ROUTES } from './routes'
 import Layout from './components/root'
 import { ErrorBoundary, RouteLoading } from './components/routers'
+import { DatabaseRouter } from './components/database/router'
 
 export const routers = createBrowserRouter([
   {
@@ -178,19 +179,13 @@ export const routers = createBrowserRouter([
       // },
 
       // Database Studio Route
-      {
-        path: ROUTES.DATABASE_STUDIO.$path(),
-        lazy: async () => ({
-          Component: (await import('./components/database/DatabaseManager')).DatabaseManager,
-          loading: RouteLoading
-        })
-      },
+      DatabaseRouter,
 
       // 404 Not Found Route (harus di akhir)
       {
         path: ROUTES.NOT_FOUND.$path(),
         lazy: async () => ({
-          Component: (await import('./pages/not-found')).default,
+          Component: (await import('./components/not-found')).default,
           loading: RouteLoading
         })
       }

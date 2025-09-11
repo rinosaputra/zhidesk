@@ -12,8 +12,8 @@ import {
   FileCode,
   Brain,
   MessageSquare,
-  Zap,
-  LayoutGrid
+  LayoutGrid,
+  SidebarIcon
 } from 'lucide-react'
 
 import { NavDocuments } from './nav-documents'
@@ -27,9 +27,9 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem
+  SidebarMenuItem,
+  useSidebar
 } from '@renderer/components/ui/sidebar'
-import { Link } from 'react-router-dom'
 import { ROUTES } from '@renderer/routes'
 
 const data = {
@@ -87,7 +87,7 @@ const data = {
   documents: [
     {
       name: 'Database Studio',
-      url: ROUTES.DATABASE_STUDIO.$path(),
+      url: ROUTES.DATABASE.$path(),
       icon: LayoutGrid
     },
     {
@@ -108,28 +108,38 @@ const data = {
   ]
 }
 
+const CollapsibleMenu: React.FC = () => {
+  const { toggleSidebar } = useSidebar()
+  return (
+    <SidebarMenuButton onClick={toggleSidebar} tooltip={'Collapse Menu'}>
+      <SidebarIcon />
+      <span>Collapse Menu</span>
+    </SidebarMenuButton>
+  )
+}
+
 export const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = (props) => {
   return (
-    <Sidebar {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-              <Link to="/">
-                <Zap className="!size-5 text-primary" />
-                <span className="text-base font-semibold">Zhidesk</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar
+      collapsible="icon"
+      className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
+      {...props}
+    >
+      <SidebarHeader className="border-b">
+        <NavUser user={data.user} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
+      {/* <SidebarSeparator className="mx-0" /> */}
+      <SidebarFooter className="border-t">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <CollapsibleMenu />
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )

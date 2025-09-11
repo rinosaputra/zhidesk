@@ -1,3 +1,4 @@
+// File: src/renderer/src/components/database/const.tsx
 import {
   Field,
   FieldType,

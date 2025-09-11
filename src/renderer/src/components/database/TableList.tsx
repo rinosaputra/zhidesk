@@ -3,7 +3,6 @@ import React from 'react'
 import { Table, Loader2, Info } from 'lucide-react'
 import { Table as DatabaseTable } from './types'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@renderer/components/ui/hover-card'
-import { Button } from '@renderer/components/ui/button'
 import { Badge } from '../ui/badge'
 
 interface TableListProps {
@@ -33,9 +32,7 @@ export const TableList: React.FC<TableListProps> = ({
         <div
           key={table.name}
           className={`p-3 py-2 rounded-lg cursor-pointer transition-colors mb-1 ${
-            selectedTable === table.name
-              ? 'bg-primary'
-              : 'hover:bg-primary/10'
+            selectedTable === table.name ? 'bg-primary' : 'hover:bg-primary/10'
           }`}
           onClick={() => onSelectTable(table.name)}
         >

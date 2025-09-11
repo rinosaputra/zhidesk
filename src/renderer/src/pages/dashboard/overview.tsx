@@ -78,13 +78,13 @@ const DashboardOverview: React.FC = () => {
       action: () => navigate(ROUTES.REPORTS_CREATE.$path()),
       color: 'text-purple-600'
     },
-    {
-      title: 'Browse Data',
-      description: 'View and manage your data collections',
-      icon: Database,
-      action: () => navigate(ROUTES.DATA_COLLECTIONS.$path()),
-      color: 'text-blue-600'
-    },
+    // {
+    //   title: 'Browse Data',
+    //   description: 'View and manage your data collections',
+    //   icon: Database,
+    //   action: () => navigate(ROUTES.DATA_COLLECTIONS.$path()),
+    //   color: 'text-blue-600'
+    // },
     {
       title: 'View Analytics',
       description: 'See detailed usage statistics',
@@ -273,15 +273,15 @@ const DashboardOverview: React.FC = () => {
           New Report
           <Plus className="h-4 w-4" />
         </Button>
-        <Button
-          onClick={() => handleNavigation(ROUTES.DATA_COLLECTIONS.$path())}
+        {/* <Button
+          onClick={() => handleNavigation(ROUTES.DATABASE.$path())}
           variant="outline"
           className="flex items-center gap-2"
         >
           <Database className="h-4 w-4" />
           Manage Data
           <ArrowRight className="h-4 w-4" />
-        </Button>
+        </Button> */}
       </div>
     </div>
   )
