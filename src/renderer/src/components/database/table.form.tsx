@@ -46,9 +46,9 @@ const DatabaseFormTable: React.FC = () => {
       fields: []
     }
   })
+  const { isPending, mutateAsync } = useMutation(database.table.create.mutationOptions())
   const columns = useFieldArray({ control: form.control, name: 'fields' })
 
-  const { isPending, mutateAsync } = useMutation(database.table.create.mutationOptions())
   return (
     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>

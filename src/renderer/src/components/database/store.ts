@@ -1,37 +1,67 @@
 // File: src/renderer/src/components/database/store.ts
 import { create } from 'zustand'
-import { InitializeDatabaseOutput } from './types'
+import { FilterCondition, GetTableSchemaOutput, InitializeDatabaseOutput, Table } from './types'
 
 type DatabaseModalType = 'database' | 'table'
 
 type DatabaseErrorType = 'database' | 'table'
 
-interface DatabaseState {
+interface DatabaseStore {
   ready: boolean
-  setReady(ready: boolean): void
   error: null | {
     message: string
     type: DatabaseErrorType
   }
-  setInitialize(data?: InitializeDatabaseOutput): void
   databaseId: string
-  setDatabaseId(id: string): boolean
-  tableId: string
-  setTableId(id: string): void
+  tableName: string
+  tableSchema: null | Table
   modal: {
     open: boolean
     type: DatabaseModalType
   }
+  searchTable: string
+  sidebar: boolean
+  query: {
+    show: boolean
+    filters: FilterCondition[]
+  }
+}
+
+const defaultDatabaseStore: DatabaseStore = {
+  ready: false,
+  error: null,
+  databaseId: '',
+  tableName: '',
+  tableSchema: null,
+  modal: {
+    open: false,
+    type: 'table' as DatabaseModalType
+  },
+  searchTable: '',
+  sidebar: true,
+  query: {
+    show: false,
+    filters: []
+  }
+}
+
+interface DatabaseState extends DatabaseStore {
+  setReady(ready: boolean): void
+  setInitialize(data?: InitializeDatabaseOutput): void
+  setDatabaseId(id: string): boolean
+  setTableName(name: string): boolean
+  setTableSchema(data?: GetTableSchemaOutput): void
   openModal(type: DatabaseModalType): void
   setModal(open: boolean): void
-  searchTable: string
   setSearchTable(value: string): void
+  toggleSidebar(): void
+  openFilters(open: boolean): void
+  setFilters(filters: FilterCondition[]): void
 }
 
 const useDatabaseStore = create<DatabaseState>()((set, get) => ({
-  ready: false,
+  ...defaultDatabaseStore,
   setReady: (ready) => set({ ready }),
-  error: null,
   setInitialize: (data) => {
     if (data?.error) {
       return set({
@@ -44,22 +74,51 @@ const useDatabaseStore = create<DatabaseState>()((set, get) => ({
     }
     return set({ ready: true, error: null })
   },
-  databaseId: '',
   setDatabaseId: (databaseId) => {
     if (get().databaseId === databaseId) return false
-    set({ databaseId, ready: false, tableId: '', error: null })
+    set({ ...defaultDatabaseStore, databaseId })
     return true
   },
-  tableId: '',
-  setTableId: (tableId) => set({ tableId }),
-  modal: {
-    open: false,
-    type: 'table' as DatabaseModalType
+  setTableName: (tableName) => {
+    if (get().tableName === tableName) return false
+    set({ tableName })
+    return true
+  },
+  setTableSchema: (data) => {
+    if (data?.error) {
+      return set({
+        error: {
+          message: data.error,
+          type: 'table'
+        }
+      })
+    }
+    return set({ tableSchema: data?.schema ?? null })
   },
   openModal: (type) => set({ modal: { open: true, type } }),
   setModal: (open) => set({ modal: { open, type: get().modal.type } }),
-  searchTable: '',
-  setSearchTable: (searchTable) => set({ searchTable })
+  setSearchTable: (searchTable) => set({ searchTable }),
+  toggleSidebar: () => set({ sidebar: !get().sidebar }),
+  setFilters: (filters) => set({ query: { filters, show: !!filters.length } }),
+  openFilters: (show) => {
+    const { filters } = get().query
+    set({
+      query: {
+        show,
+        filters: !show
+          ? filters
+          : filters.length
+            ? filters
+            : [
+                {
+                  field: '',
+                  operator: 'contains',
+                  value: ''
+                }
+              ]
+      }
+    })
+  }
 }))
 
 export default useDatabaseStore

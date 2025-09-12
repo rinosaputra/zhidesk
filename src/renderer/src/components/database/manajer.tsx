@@ -7,8 +7,9 @@ import useDatabaseStore from './store'
 import { toast } from 'sonner'
 
 const DatabaseManajer: React.FC = () => {
-  const { databaseId = 'default', tableId = '' } = useTypedParams(ROUTES.DATABASE_TABLE_ID)
-  const { setDatabaseId, setTableId, setInitialize } = useDatabaseStore()
+  const { databaseId = 'default' } = useTypedParams(ROUTES.DATABASE_ID)
+  const { tableName = '' } = useTypedParams(ROUTES.DATABASE_TABLE)
+  const { setDatabaseId, setTableName, setInitialize, setTableSchema } = useDatabaseStore()
 
   React.useEffect(() => {
     const init = async (): Promise<void> => {
@@ -33,8 +34,25 @@ const DatabaseManajer: React.FC = () => {
   }, [databaseId, setDatabaseId, setInitialize])
 
   React.useEffect(() => {
-    if (tableId) setTableId(tableId)
-  }, [tableId, setTableId])
+    const init = async (): Promise<void> => {
+      toast.promise(
+        () =>
+          database.table.getSchema.call({
+            databaseId,
+            tableName
+          }),
+        {
+          loading: `Load Database`,
+          success: (result) => {
+            setTableSchema(result)
+            if (result.error) return `Error ${result.error}`
+            return `Success Load Database`
+          }
+        }
+      )
+    }
+    if (setTableName(tableName)) init()
+  }, [tableName, databaseId, setTableName, setTableSchema])
 
   return null
 }

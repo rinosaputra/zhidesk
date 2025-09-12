@@ -50,7 +50,10 @@ export const SiteHeader: React.FC<React.ComponentProps<'header'>> = ({ className
   return (
     <header
       {...props}
-      className={cn('sticky top-0 z-50 flex w-full items-center border-b bg-sidebar', className)}
+      className={cn(
+        'sticky top-0 z-50 flex w-full items-center border-b bg-sidebar select-none',
+        className
+      )}
     >
       <div className="flex h-(--header-height) w-full items-center gap-2 px-4">
         <Link to="/">

@@ -122,7 +122,7 @@ export const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = (props
   return (
     <Sidebar
       collapsible="icon"
-      className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
+      className="top-(--header-height) h-[calc(100svh-var(--header-height))]! select-none"
       {...props}
     >
       <SidebarHeader className="border-b">

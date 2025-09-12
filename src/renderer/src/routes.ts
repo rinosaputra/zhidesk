@@ -68,8 +68,11 @@ const root = route({
           params: { databaseId: string() },
           children: {
             table: route({
-              path: 'table/:tableId',
-              params: { tableId: string() }
+              path: 'table/:tableName',
+              params: { tableName: string() },
+              children: {
+                structure: route({ path: 'structure' })
+              }
             })
           }
         })
@@ -109,7 +112,8 @@ export const ROUTES = {
 
   DATABASE: root.databaseStudio,
   DATABASE_ID: root.databaseStudio.id,
-  DATABASE_TABLE_ID: root.databaseStudio.id.table,
+  DATABASE_TABLE: root.databaseStudio.id.table,
+  DATABASE_STRUCTURE: root.databaseStudio.id.table.structure,
 
   NOT_FOUND: root.notFound
 }

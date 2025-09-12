@@ -16,8 +16,8 @@ const Layout: React.FC = () => {
           <AppSidebar />
           <DatabaseSidebar />
           <SidebarInset>
-            <main className="flex-1 overflow-auto w-full max-h-(--height-main) bg-sidebar">
-              <div className="@container/main flex flex-1 flex-col gap-2">
+            <main className="flex-1 w-full max-h-(--height-main) bg-sidebar">
+              <div className="@container/main flex flex-1 flex-col gap-2 h-full overflow-auto">
                 <Outlet />
               </div>
             </main>

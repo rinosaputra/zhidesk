@@ -10,21 +10,9 @@ import {
 } from '@renderer/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
 import { Button } from '@renderer/components/ui/button'
-import { Input } from '@renderer/components/ui/input'
-import { ScrollArea } from '@renderer/components/ui/scroll-area'
-import {
-  Search,
-  Database,
-  Table,
-  Plus,
-  RefreshCw,
-  Settings,
-  FileText,
-  AlertCircle
-} from 'lucide-react'
+import { Search, Database, Table, Plus, Settings, FileText, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { TableList } from './TableList'
 import { TableColumns } from './TableColumns'
 import { TableData } from './TableData'
 import { TableFilters } from './TableFilters'
@@ -37,12 +25,9 @@ import {
   // DeleteInput,
   QueryObject
 } from '@service/database/types'
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert'
-import Creates from './Creates'
 
 export const DatabaseManager: React.FC = () => {
-  const [selectedTable, setSelectedTable] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedTable] = useState<string>('')
   const [filters, setFilters] = useState<FilterCondition[]>([])
   const [pagination, setPagination] = useState<Omit<Pagination, 'total'>>({
     page: 1,
