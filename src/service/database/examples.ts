@@ -83,10 +83,7 @@ export const exampleUserTable = createTable({
     }),
     createDateField({
       name: 'lastLogin',
-      label: 'Last Login',
-      validation: {
-        past: true
-      }
+      label: 'Last Login'
     })
   ]
 })

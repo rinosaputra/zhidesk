@@ -5,6 +5,7 @@ import { ROUTES } from '@renderer/routes'
 import { database } from '@renderer/lib/orpc-query'
 import useDatabaseStore from './store'
 import { toast } from 'sonner'
+import { getTableSchema } from './client'
 
 const DatabaseManajer: React.FC = () => {
   const { databaseId = 'default' } = useTypedParams(ROUTES.DATABASE_ID)
@@ -34,24 +35,14 @@ const DatabaseManajer: React.FC = () => {
   }, [databaseId, setDatabaseId, setInitialize])
 
   React.useEffect(() => {
-    const init = async (): Promise<void> => {
-      toast.promise(
-        () =>
-          database.table.getSchema.call({
-            databaseId,
-            tableName
-          }),
+    if (setTableName(tableName))
+      getTableSchema(
         {
-          loading: `Load Database`,
-          success: (result) => {
-            setTableSchema(result)
-            if (result.error) return `Error ${result.error}`
-            return `Success Load Database`
-          }
-        }
+          databaseId,
+          tableName
+        },
+        setTableSchema
       )
-    }
-    if (setTableName(tableName)) init()
   }, [tableName, databaseId, setTableName, setTableSchema])
 
   return null

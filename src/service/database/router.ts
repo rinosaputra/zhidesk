@@ -49,7 +49,15 @@ import {
   existsOutput,
   searchOutput,
   aggregateOutput,
-  findByFieldOutput
+  findByFieldOutput,
+  updateFieldValueInput,
+  updateFieldValueOutput,
+  updateTableFieldInput,
+  updateTableFieldOutput,
+  addTableFieldInput,
+  addTableFieldOutput,
+  removeTableFieldInput,
+  removeTableFieldOutput
 } from './types'
 
 export const databaseRouter = {
@@ -363,6 +371,31 @@ export const databaseRouter = {
       }
     }),
 
+  updateFieldValue: os
+    .input(updateFieldValueInput)
+    .output(updateFieldValueOutput)
+    .handler(async ({ input }) => {
+      try {
+        const db = DatabaseService.getInstance()
+        const document = await db.updateFieldValue(
+          input.databaseId,
+          input.tableName,
+          input.id,
+          input.field,
+          input.value
+        )
+        return {
+          success: true,
+          document
+        }
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to update field value'
+        }
+      }
+    }),
+
   delete: os
     .input(deleteInput)
     .output(deleteOutput)
@@ -539,6 +572,70 @@ export const databaseRouter = {
           success: false,
           documents: [],
           error: error instanceof Error ? error.message : 'Failed to find by field'
+        }
+      }
+    }),
+
+  // ==================== SCHEMA OPERATIONS ====================
+
+  updateTableField: os
+    .input(updateTableFieldInput)
+    .output(updateTableFieldOutput)
+    .handler(async ({ input }) => {
+      try {
+        const db = DatabaseService.getInstance()
+        const schema = await db.updateTableField(
+          input.databaseId,
+          input.tableName,
+          input.fieldName,
+          input.updates
+        )
+        return {
+          success: true,
+          schema
+        }
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to update table field'
+        }
+      }
+    }),
+
+  addTableField: os
+    .input(addTableFieldInput)
+    .output(addTableFieldOutput)
+    .handler(async ({ input }) => {
+      try {
+        const db = DatabaseService.getInstance()
+        const schema = await db.addTableField(input.databaseId, input.tableName, input.field)
+        return {
+          success: true,
+          schema
+        }
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to add table field'
+        }
+      }
+    }),
+
+  removeTableField: os
+    .input(removeTableFieldInput)
+    .output(removeTableFieldOutput)
+    .handler(async ({ input }) => {
+      try {
+        const db = DatabaseService.getInstance()
+        const schema = await db.removeTableField(input.databaseId, input.tableName, input.fieldName)
+        return {
+          success: true,
+          schema
+        }
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to remove table field'
         }
       }
     })

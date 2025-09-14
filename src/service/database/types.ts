@@ -46,7 +46,9 @@ export const StringFieldSchema = BaseFieldSchema.extend({
       length: z.coerce.number().optional(),
       pattern: z.string().optional(),
       format: z.enum(['email', 'url', 'uuid', 'phone', 'password', 'string']).optional(),
-      trim: zBool(true)
+      trim: zBool(true),
+      transform: z.enum(['lowercase', 'uppercase', 'capitalize', 'none']).optional(),
+      as: z.enum(['input', 'textarea']).optional()
     })
     .optional()
 })
@@ -71,7 +73,8 @@ export const BooleanFieldSchema = BaseFieldSchema.extend({
   type: z.literal('boolean'),
   validation: z
     .object({
-      is: z.enum(['true', 'false']).optional()
+      is: z.enum(['true', 'false']).optional(),
+      as: z.enum(['switch', 'checkbox']).optional()
     })
     .optional()
 })
@@ -84,7 +87,9 @@ export const DateFieldSchema = BaseFieldSchema.extend({
       min: z.date().optional(),
       max: z.date().optional(),
       past: zBool(false),
-      future: zBool(false)
+      future: zBool(false),
+      format: z.string().optional(),
+      as: z.enum(['date', 'datetime', 'time']).optional()
     })
     .optional()
 })
@@ -99,7 +104,12 @@ export const EnumFieldSchema = BaseFieldSchema.extend({
         value: z.string().min(1, 'Reference enum value is required')
       })
     )
-    .min(1, 'At least one enum option is required')
+    .min(1, 'At least one enum option is required'),
+  validation: z
+    .object({
+      as: z.enum(['select', 'radio']).optional()
+    })
+    .optional()
 })
 
 // Reference field (relationship)
@@ -107,7 +117,9 @@ export const ReferenceFieldSchema = BaseFieldSchema.extend({
   type: z.literal('reference'),
   reference: z.object({
     tableName: z.string().min(1, 'Reference table name is required'),
-    columnName: z.string().min(1, 'Reference column name is required').default('_id').optional()
+    columnName: z.string().min(1, 'Reference column name is required').default('_id').optional(),
+    join: z.string().default(' ').optional(),
+    concat: z.string().min(1, 'Reference concat is required').array().optional()
   }),
   validation: z
     .object({
@@ -495,6 +507,51 @@ export const findByFieldInput = z.object({
 })
 export type FindByFieldInput = z.infer<typeof findByFieldInput>
 
+export const updateFieldValueInput = z.object({
+  databaseId,
+  tableName,
+  id: documentId,
+  field: z.string().min(1, 'Field name is required'),
+  value: z.any()
+})
+export type UpdateFieldValueInput = z.infer<typeof updateFieldValueInput>
+
+// Schema untuk mengubah field table
+export const updateTableFieldInput = z.object({
+  databaseId,
+  tableName,
+  fieldName: z.string().min(1, 'Field name is required'),
+  updates: z
+    .object({
+      label: z.string().optional(),
+      description: z.string().optional(),
+      required: z.boolean().optional(),
+      unique: z.boolean().optional(),
+      hidden: z.boolean().optional(),
+      readonly: z.boolean().optional(),
+      default: z.any().optional(),
+      validation: z.any().optional() // Validation specifics depend on field type
+    })
+    .refine((obj) => Object.keys(obj).length > 0, {
+      message: 'At least one update property is required'
+    })
+})
+export type UpdateTableFieldInput = z.infer<typeof updateTableFieldInput>
+
+export const addTableFieldInput = z.object({
+  databaseId,
+  tableName,
+  field: FieldSchema
+})
+export type AddTableFieldInput = z.infer<typeof addTableFieldInput>
+
+export const removeTableFieldInput = z.object({
+  databaseId,
+  tableName,
+  fieldName: z.string().min(1, 'Field name is required')
+})
+export type RemoveTableFieldInput = z.infer<typeof removeTableFieldInput>
+
 // ==================== OUTPUT SCHEMAS ====================
 
 // Base response schema
@@ -615,3 +672,23 @@ export const getAllDatabasesOutput = baseResponse.extend({
   databases: z.array(z.string())
 })
 export type GetAllDatabasesOutput = z.infer<typeof getAllDatabasesOutput>
+
+export const updateFieldValueOutput = baseResponse.extend({
+  document: documentData.optional()
+})
+export type UpdateFieldValueOutput = z.infer<typeof updateFieldValueOutput>
+
+export const updateTableFieldOutput = baseResponse.extend({
+  schema: tableConfig.optional()
+})
+export type UpdateTableFieldOutput = z.infer<typeof updateTableFieldOutput>
+
+export const addTableFieldOutput = baseResponse.extend({
+  schema: tableConfig.optional()
+})
+export type AddTableFieldOutput = z.infer<typeof addTableFieldOutput>
+
+export const removeTableFieldOutput = baseResponse.extend({
+  schema: tableConfig.optional()
+})
+export type RemoveTableFieldOutput = z.infer<typeof removeTableFieldOutput>

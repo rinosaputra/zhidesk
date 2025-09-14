@@ -51,7 +51,7 @@ const EnumInputOptions: React.FC<FieldEditorProps> = ({ index }) => {
         <div className="flex items-center justify-between">
           <CardTitle>Enum Options</CardTitle>
           <Button type="button" onClick={() => append({ label: '', value: '' })} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus />
             Add Option
           </Button>
         </div>
@@ -65,7 +65,7 @@ const EnumInputOptions: React.FC<FieldEditorProps> = ({ index }) => {
           >
             {/* Drag Handle */}
             <Button type="button" variant="ghost" size="icon" disabled>
-              <GripVertical className="h-4 w-4" />
+              <GripVertical />
             </Button>
 
             {/* Option Inputs */}
@@ -106,13 +106,13 @@ const EnumInputOptions: React.FC<FieldEditorProps> = ({ index }) => {
               onClick={() => remove(optionIndex)}
               className="bg-destructive"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 />
             </Button>
           </div>
         ))}
 
         {fields.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No options added yet</p>
             <p className="text-sm">
@@ -265,12 +265,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ index }) => {
           render={({ field }) => (
             <FormItem className="flex items-center space-x-2">
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled
-                  aria-readonly
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <div className="space-y-0.5">
                 <FormLabel>Required</FormLabel>
@@ -285,12 +280,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ index }) => {
           render={({ field }) => (
             <FormItem className="flex items-center space-x-2">
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled
-                  aria-readonly
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <div className="space-y-0.5">
                 <FormLabel>Unique</FormLabel>
@@ -305,12 +295,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ index }) => {
           render={({ field }) => (
             <FormItem className="flex items-center space-x-2">
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled
-                  aria-readonly
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <div className="space-y-0.5">
                 <FormLabel>Hidden</FormLabel>
@@ -325,12 +310,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ index }) => {
           render={({ field }) => (
             <FormItem className="flex items-center space-x-2">
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled
-                  aria-readonly
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <div className="space-y-0.5">
                 <FormLabel>Readonly</FormLabel>

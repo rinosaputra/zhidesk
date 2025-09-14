@@ -8,10 +8,23 @@ import { access, constants, readFile, writeFile } from 'fs/promises'
 import _ from 'lodash'
 import { DatabaseGenerator } from './generator'
 import { exampleUserTable, examplePostTable } from './examples'
-import { Database, Table } from './types'
+import {
+  ArrayFieldSchema,
+  BooleanFieldSchema,
+  Database,
+  DateFieldSchema,
+  EnumFieldSchema,
+  Field,
+  NumberFieldSchema,
+  ObjectFieldSchema,
+  ReferenceFieldSchema,
+  StringFieldSchema,
+  Table
+} from './types'
 import { AggregationStage, DocumentData, QueryOptions, SearchOptions } from './types'
 import { v4 as uuidv4 } from 'uuid' // Tambahkan import UUID
 import { DatabaseUtils } from './utils'
+import z from 'zod'
 
 // ==================== DATABASE SERVICE ====================
 
@@ -804,6 +817,52 @@ export class DatabaseService {
     }
   }
 
+  async updateFieldValue(
+    databaseId: string,
+    tableName: string,
+    id: string,
+    field: string,
+    value: any
+  ): Promise<DocumentData> {
+    try {
+      const generator = this.getGenerator(databaseId)
+      const db = await this.getDatabase(databaseId, tableName)
+
+      const existingData = db.data[id]
+      if (!existingData) {
+        throw new Error('Document not found')
+      }
+
+      // Validasi field existence
+      const table = generator.getTable(tableName)
+      if (
+        table &&
+        !table.fields.some((f) => f.name === field) &&
+        !['_id', '_createdAt', '_updatedAt', '_deletedAt'].includes(field)
+      ) {
+        throw new Error(`Field '${field}' does not exist in table '${tableName}'`)
+      }
+
+      // Update hanya field yang spesifik
+      const updatedData = {
+        ...existingData,
+        [field]: value,
+        _updatedAt: new Date()
+      }
+
+      // Validasi data yang diupdate
+      const validatedData = generator.validateData(tableName, updatedData)
+
+      db.data[id] = validatedData
+      await db.write()
+
+      return validatedData
+    } catch (error) {
+      console.error('Error updating field:', error)
+      throw error
+    }
+  }
+
   async delete(databaseId: string, tableName: string, id: string): Promise<boolean> {
     try {
       const generator = this.getGenerator(databaseId)
@@ -942,5 +1001,206 @@ export class DatabaseService {
     })
 
     this.generators.delete(databaseId)
+  }
+
+  async updateTableField(
+    databaseId: string,
+    tableName: string,
+    fieldName: string,
+    updates: Partial<Field>
+  ): Promise<Table> {
+    try {
+      // const generator = this.getGenerator(databaseId)
+      const metadata = await this.loadDatabaseMetadata()
+      const database = metadata[databaseId]
+
+      if (!database) {
+        throw new Error(`Database ${databaseId} not found`)
+      }
+
+      const tableIndex = database.tables.findIndex((t) => t.name === tableName)
+      if (tableIndex === -1) {
+        throw new Error(`Table ${tableName} not found in database ${databaseId}`)
+      }
+
+      const table = database.tables[tableIndex]
+      const fieldIndex = table.fields.findIndex((f) => f.name === fieldName)
+      if (fieldIndex === -1) {
+        throw new Error(`Field ${fieldName} not found in table ${tableName}`)
+      }
+
+      // Update field properties
+      const updatedField = {
+        ...table.fields[fieldIndex],
+        ...updates
+      }
+
+      // Validasi field yang diupdate
+      const fieldSchema = this.getFieldSchema(updatedField.type)
+      const validatedField = fieldSchema.parse(updatedField)
+
+      // Update table
+      const updatedTable = {
+        ...table,
+        fields: [
+          ...table.fields.slice(0, fieldIndex),
+          validatedField,
+          ...table.fields.slice(fieldIndex + 1)
+        ],
+        updatedAt: new Date()
+      }
+
+      // Update metadata
+      database.tables[tableIndex] = updatedTable as Table
+      database.updatedAt = new Date()
+      metadata[databaseId] = database
+
+      await this.saveDatabaseMetadata(metadata)
+
+      // Clear cache dan reload generator
+      this.generators.delete(databaseId)
+      const newGenerator = new DatabaseGenerator(database)
+      this.generators.set(databaseId, newGenerator)
+
+      return updatedTable as Table
+    } catch (error) {
+      console.error('Error updating table field:', error)
+      throw error
+    }
+  }
+
+  async addTableField(databaseId: string, tableName: string, field: Field): Promise<Table> {
+    try {
+      // const generator = this.getGenerator(databaseId)
+      const metadata = await this.loadDatabaseMetadata()
+      const database = metadata[databaseId]
+
+      if (!database) {
+        throw new Error(`Database ${databaseId} not found`)
+      }
+
+      const tableIndex = database.tables.findIndex((t) => t.name === tableName)
+      if (tableIndex === -1) {
+        throw new Error(`Table ${tableName} not found in database ${databaseId}`)
+      }
+
+      const table = database.tables[tableIndex]
+
+      // Check if field already exists
+      if (table.fields.some((f) => f.name === field.name)) {
+        throw new Error(`Field ${field.name} already exists in table ${tableName}`)
+      }
+
+      // Validasi field baru
+      const fieldSchema = this.getFieldSchema(field.type)
+      const validatedField = fieldSchema.parse(field)
+
+      // Update table
+      const updatedTable = {
+        ...table,
+        fields: [...table.fields, validatedField],
+        updatedAt: new Date()
+      }
+
+      // Update metadata
+      database.tables[tableIndex] = updatedTable as Table
+      database.updatedAt = new Date()
+      metadata[databaseId] = database
+
+      await this.saveDatabaseMetadata(metadata)
+
+      // Clear cache dan reload generator
+      this.generators.delete(databaseId)
+      const newGenerator = new DatabaseGenerator(database)
+      this.generators.set(databaseId, newGenerator)
+
+      return updatedTable as Table
+    } catch (error) {
+      console.error('Error adding table field:', error)
+      throw error
+    }
+  }
+
+  async removeTableField(databaseId: string, tableName: string, fieldName: string): Promise<Table> {
+    try {
+      // const generator = this.getGenerator(databaseId)
+      const metadata = await this.loadDatabaseMetadata()
+      const database = metadata[databaseId]
+
+      if (!database) {
+        throw new Error(`Database ${databaseId} not found`)
+      }
+
+      const tableIndex = database.tables.findIndex((t) => t.name === tableName)
+      if (tableIndex === -1) {
+        throw new Error(`Table ${tableName} not found in database ${databaseId}`)
+      }
+
+      const table = database.tables[tableIndex]
+      const fieldIndex = table.fields.findIndex((f) => f.name === fieldName)
+      if (fieldIndex === -1) {
+        throw new Error(`Field ${fieldName} not found in table ${tableName}`)
+      }
+
+      // Jangan izinkan menghapus field required atau field dengan data
+      const field = table.fields[fieldIndex]
+      if (field.required) {
+        throw new Error(`Cannot remove required field ${fieldName}`)
+      }
+
+      // Check if field has data (optional - bisa diskip jika tidak critical)
+      const db = await this.getDatabase(databaseId, tableName)
+      const hasData = Object.values(db.data || {}).some((doc) => doc[fieldName] !== undefined)
+      if (hasData) {
+        throw new Error(`Field ${fieldName} contains data and cannot be removed`)
+      }
+
+      // Update table
+      const updatedTable = {
+        ...table,
+        fields: table.fields.filter((f) => f.name !== fieldName),
+        updatedAt: new Date()
+      }
+
+      // Update metadata
+      database.tables[tableIndex] = updatedTable
+      database.updatedAt = new Date()
+      metadata[databaseId] = database
+
+      await this.saveDatabaseMetadata(metadata)
+
+      // Clear cache dan reload generator
+      this.generators.delete(databaseId)
+      const newGenerator = new DatabaseGenerator(database)
+      this.generators.set(databaseId, newGenerator)
+
+      return updatedTable
+    } catch (error) {
+      console.error('Error removing table field:', error)
+      throw error
+    }
+  }
+
+  private getFieldSchema(fieldType: string): z.ZodTypeAny {
+    switch (fieldType) {
+      case 'string':
+        return StringFieldSchema
+      case 'number':
+        return NumberFieldSchema
+      case 'boolean':
+        return BooleanFieldSchema
+      case 'date':
+        return DateFieldSchema
+      case 'enum':
+        return EnumFieldSchema
+      case 'reference':
+        return ReferenceFieldSchema
+      case 'array':
+        return ArrayFieldSchema
+      case 'object':
+        return ObjectFieldSchema
+      default:
+        throw new Error(`Unknown field type: ${fieldType}`)
+    }
   }
 }

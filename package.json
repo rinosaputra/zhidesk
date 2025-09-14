@@ -27,7 +27,9 @@
     "test:db:router-server": "vitest src/service/database/__tests__/router.server.test.ts",
     "test:db:router-mock": "vitest src/service/database/__tests__/router.mock.test.ts",
     "test:db:integration": "vitest src/service/database/__tests__/router.integration.test.ts",
-    "test:db:performance": "vitest src/service/database/__tests__/router.performance.test.ts"
+    "test:db:performance": "vitest src/service/database/__tests__/router.performance.test.ts",
+    "test:db:fieldvalue": "vitest src/service/database/__tests__/router.fieldvalue.test.ts",
+    "test:db:fieldalter": "vitest src/service/database/__tests__/router.fieldvalue.test.ts"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

@@ -14,7 +14,8 @@ import {
   EnumField,
   ReferenceField,
   ArrayField,
-  ObjectField
+  ObjectField,
+  FieldType
 } from './types'
 
 export class DatabaseGenerator {
@@ -308,7 +309,7 @@ export class DatabaseGenerator {
     return defaults
   }
 
-  private getDefaultValueForType(type: string): any {
+  getDefaultValueForType(type: FieldType): any {
     switch (type) {
       case 'string':
         return ''

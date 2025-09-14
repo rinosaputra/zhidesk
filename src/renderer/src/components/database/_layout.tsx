@@ -37,7 +37,7 @@ const ToggleFilter: React.FC = () => {
 }
 
 const DatabaseLayout: React.FC = () => {
-  const { ready, sidebar, toggleSidebar, databaseId, tableName } = useDatabaseStore()
+  const { ready, sidebar, toggleSidebar, databaseId, tableName, openModal } = useDatabaseStore()
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const structure = React.useMemo(
@@ -85,7 +85,12 @@ const DatabaseLayout: React.FC = () => {
                   <Columns />
                   <span>Columns</span>
                 </Button>
-                <Button className="border-0">
+                <Button
+                  className="border-0"
+                  onClick={() =>
+                    openModal('record', { method: 'create', id: undefined, value: undefined })
+                  }
+                >
                   <Plus />
                   <span>Add Record</span>
                 </Button>

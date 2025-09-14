@@ -3,13 +3,14 @@ import useDatabaseStore from './store'
 import { RouteLoading } from '../routers'
 import { AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert'
+import DatabaseTableData from './table.data'
 
 const DatabaseTable: React.FC = () => {
-  const { tableSchema, error } = useDatabaseStore()
+  const { query, databaseId, tableName, tableSchema, error, getQueryOptions } = useDatabaseStore()
   if (!tableSchema) return <RouteLoading />
   if (error?.type === 'table')
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center select-none">
         <Alert variant="destructive" className="max-w-md bg-destructive/10">
           <AlertCircle />
           <AlertTitle>Failed to load table data.</AlertTitle>
@@ -19,7 +20,11 @@ const DatabaseTable: React.FC = () => {
         </Alert>
       </div>
     )
-  return <div>Database</div>
+  return (
+    <DatabaseTableData
+      {...{ databaseId, query, tableName, tableSchema, options: getQueryOptions() }}
+    />
+  )
 }
 
 export default DatabaseTable

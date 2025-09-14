@@ -1,12 +1,29 @@
 // File: src/renderer/src/components/database/store.ts
 import { create } from 'zustand'
-import { FilterCondition, GetTableSchemaOutput, InitializeDatabaseOutput, Table } from './types'
+import {
+  FilterCondition,
+  GetTableSchemaOutput,
+  InitializeDatabaseOutput,
+  QueryOptions,
+  Table
+} from './types'
 
-type DatabaseModalType = 'database' | 'table'
+type DatabaseModalType = 'database' | 'table' | 'record'
 
 type DatabaseErrorType = 'database' | 'table'
 
-interface DatabaseStore {
+type DatabaseStoreModal<Method extends 'create' | 'update', Value = undefined, Id = undefined> = {
+  method: Method
+  value: Value
+  id: Id
+}
+
+type DatabaseStoreModalGen =
+  | DatabaseStoreModal<'create'>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | DatabaseStoreModal<'update', any, string>
+
+export interface DatabaseStore {
   ready: boolean
   error: null | {
     message: string
@@ -18,13 +35,15 @@ interface DatabaseStore {
   modal: {
     open: boolean
     type: DatabaseModalType
-  }
+  } & DatabaseStoreModalGen
   searchTable: string
   sidebar: boolean
   query: {
     show: boolean
     filters: FilterCondition[]
   }
+  pagination: Record<'limit' | 'skip', number>
+  sort: Record<string, 'asc' | 'desc' | undefined>
 }
 
 const defaultDatabaseStore: DatabaseStore = {
@@ -32,17 +51,25 @@ const defaultDatabaseStore: DatabaseStore = {
   error: null,
   databaseId: '',
   tableName: '',
-  tableSchema: null,
   modal: {
     open: false,
-    type: 'table' as DatabaseModalType
+    type: 'table' as DatabaseModalType,
+    method: 'create',
+    id: undefined,
+    value: undefined
   },
   searchTable: '',
+  tableSchema: null,
   sidebar: true,
   query: {
     show: false,
     filters: []
-  }
+  },
+  pagination: {
+    limit: 20,
+    skip: 0
+  },
+  sort: {}
 }
 
 interface DatabaseState extends DatabaseStore {
@@ -51,12 +78,15 @@ interface DatabaseState extends DatabaseStore {
   setDatabaseId(id: string): boolean
   setTableName(name: string): boolean
   setTableSchema(data?: GetTableSchemaOutput): void
-  openModal(type: DatabaseModalType): void
+  openModal(type: DatabaseModalType, gen: DatabaseStoreModalGen): void
   setModal(open: boolean): void
   setSearchTable(value: string): void
   toggleSidebar(): void
   openFilters(open: boolean): void
   setFilters(filters: FilterCondition[]): void
+  setPagination(name: 'limit' | 'page', size: number): void
+  toggleSort(field: string): void
+  getQueryOptions(): QueryOptions
 }
 
 const useDatabaseStore = create<DatabaseState>()((set, get) => ({
@@ -80,8 +110,15 @@ const useDatabaseStore = create<DatabaseState>()((set, get) => ({
     return true
   },
   setTableName: (tableName) => {
-    if (get().tableName === tableName) return false
-    set({ tableName })
+    const data = get()
+    if (data.tableName === tableName) return false
+    set({
+      ...defaultDatabaseStore,
+      databaseId: data.databaseId,
+      ready: data.ready,
+      error: data.error,
+      tableName
+    })
     return true
   },
   setTableSchema: (data) => {
@@ -95,8 +132,9 @@ const useDatabaseStore = create<DatabaseState>()((set, get) => ({
     }
     return set({ tableSchema: data?.schema ?? null })
   },
-  openModal: (type) => set({ modal: { open: true, type } }),
-  setModal: (open) => set({ modal: { open, type: get().modal.type } }),
+  openModal: (type, gen) =>
+    set({ modal: { ...(gen as DatabaseStoreModal<'create'>), type, open: true } }),
+  setModal: (open) => set({ modal: { ...get().modal, open } }),
   setSearchTable: (searchTable) => set({ searchTable }),
   toggleSidebar: () => set({ sidebar: !get().sidebar }),
   setFilters: (filters) => set({ query: { filters, show: !!filters.length } }),
@@ -118,6 +156,29 @@ const useDatabaseStore = create<DatabaseState>()((set, get) => ({
               ]
       }
     })
+  },
+  setPagination: (name, size) => set({ pagination: { ...get().pagination, [name]: size } }),
+  toggleSort: (field) => {
+    const sort = get().sort
+    const find = sort[field]
+    if (find === 'desc') {
+      set({ sort: { ...sort, [field]: undefined } })
+    } else if (find === 'asc') {
+      set({ sort: { ...sort, [field]: 'desc' } })
+    } else {
+      set({ sort: { ...sort, [field]: 'asc' } })
+    }
+  },
+  getQueryOptions: () => {
+    const { pagination, sort } = get()
+    return {
+      ...pagination,
+      sort: Object.fromEntries(
+        Object.entries(sort)
+          .filter(([, e]) => typeof e !== 'undefined')
+          .map(([i, e]) => [i, e === 'asc' ? -1 : 1])
+      )
+    }
   }
 }))
 

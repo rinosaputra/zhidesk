@@ -64,7 +64,13 @@ const AddButton: React.FC = () => {
       <DropdownMenuContent className="w-56" align="start">
         <DropdownMenuGroup>
           <DropdownMenuItem disabled>Create Database</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => openModal('table')}>Create Table</DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              openModal('table', { method: 'create', id: undefined, value: undefined })
+            }
+          >
+            Create Table
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -254,7 +260,7 @@ export const DatabaseSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = (
     <Sidebar
       collapsible="none"
       className={cn(
-        'sticky top-(--header-height) h-[calc(100svh-var(--header-height))]! border-r bg-secondary/80 select-none',
+        'sticky top-(--header-height) h-[calc(100svh-var(--header-height)-1px)]! border-r bg-secondary/80 select-none',
         sidebar || !tableName ? undefined : 'hidden'
       )}
       {...props}

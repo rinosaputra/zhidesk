@@ -28,7 +28,7 @@ import {
   FormLabel,
   FormMessage
 } from '@renderer/components/ui/form'
-import { FieldEditor } from './FieldEditor'
+import { FieldEditor } from './field.editor'
 import { fieldTypes } from './const'
 import useDatabaseStore from './store'
 
@@ -144,7 +144,7 @@ const DatabaseFormTable: React.FC = () => {
                   }
                   size="sm"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus />
                   Add Field
                 </Button>
               </div>
@@ -166,7 +166,7 @@ const DatabaseFormTable: React.FC = () => {
                             size="sm"
                             onClick={() => columns.remove(index)}
                           >
-                            <X className="h-4 w-4" />
+                            <X />
                           </Button>
                         )}
                       </div>
@@ -192,11 +192,7 @@ const DatabaseFormTable: React.FC = () => {
                         </FormDescription>
                       </div>
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          aria-readonly
-                        />
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                     </FormItem>
                   )}
@@ -213,11 +209,7 @@ const DatabaseFormTable: React.FC = () => {
                         </FormDescription>
                       </div>
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          aria-readonly
-                        />
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                     </FormItem>
                   )}
@@ -234,7 +226,7 @@ const DatabaseFormTable: React.FC = () => {
           <Button
             type="submit"
             disabled={isPending}
-            onClick={form.handleSubmit(async (data) => {
+            onClick={form.handleSubmit((data) => {
               toast.promise(
                 () =>
                   mutateAsync({
@@ -260,12 +252,12 @@ const DatabaseFormTable: React.FC = () => {
           >
             {isPending ? (
               <>
-                <Loader2 className="h-6 w-6 animate-spin" />
+                <Loader2 className="animate-spin" />
                 Creating...
               </>
             ) : (
               <>
-                <Save className="h-4 w-4" />
+                <Save />
                 Create Table
               </>
             )}

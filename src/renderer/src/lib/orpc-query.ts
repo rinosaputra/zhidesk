@@ -19,7 +19,12 @@ export const database = {
     getAll: orpc.database.getTables,
     getSchema: orpc.database.getTableSchema,
     create: orpc.database.createTable,
-    getDatabaseSchema: orpc.database.getDatabaseSchema
+    getDatabaseSchema: orpc.database.getDatabaseSchema,
+
+    // Schema operations (new functions from router)
+    updateTableField: orpc.database.updateTableField,
+    addTableField: orpc.database.addTableField,
+    removeTableField: orpc.database.removeTableField
   },
 
   // Document operations
@@ -27,12 +32,14 @@ export const database = {
     find: orpc.database.find,
     findOne: orpc.database.findOne,
     findById: orpc.database.findById,
+    findByField: orpc.database.findByField, // New function from router
     create: orpc.database.create,
     createMany: orpc.database.createMany,
     update: orpc.database.update,
     updateMany: orpc.database.updateMany,
     delete: orpc.database.delete,
     deleteMany: orpc.database.deleteMany,
+    updateFieldValue: orpc.database.updateFieldValue, // New function from router
     count: orpc.database.count,
     distinct: orpc.database.distinct,
     exists: orpc.database.exists,

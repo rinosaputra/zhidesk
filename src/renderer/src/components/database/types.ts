@@ -495,6 +495,51 @@ export const findByFieldInput = z.object({
 })
 export type FindByFieldInput = z.infer<typeof findByFieldInput>
 
+export const updateFieldValueInput = z.object({
+  databaseId,
+  tableName,
+  id: documentId,
+  field: z.string().min(1, 'Field name is required'),
+  value: z.any()
+})
+export type UpdateFieldValueInput = z.infer<typeof updateFieldValueInput>
+
+// Schema untuk mengubah field table
+export const updateTableFieldInput = z.object({
+  databaseId,
+  tableName,
+  fieldName: z.string().min(1, 'Field name is required'),
+  updates: z
+    .object({
+      label: z.string().optional(),
+      description: z.string().optional(),
+      required: z.boolean().optional(),
+      unique: z.boolean().optional(),
+      hidden: z.boolean().optional(),
+      readonly: z.boolean().optional(),
+      default: z.any().optional(),
+      validation: z.any().optional() // Validation specifics depend on field type
+    })
+    .refine((obj) => Object.keys(obj).length > 0, {
+      message: 'At least one update property is required'
+    })
+})
+export type UpdateTableFieldInput = z.infer<typeof updateTableFieldInput>
+
+export const addTableFieldInput = z.object({
+  databaseId,
+  tableName,
+  field: FieldSchema
+})
+export type AddTableFieldInput = z.infer<typeof addTableFieldInput>
+
+export const removeTableFieldInput = z.object({
+  databaseId,
+  tableName,
+  fieldName: z.string().min(1, 'Field name is required')
+})
+export type RemoveTableFieldInput = z.infer<typeof removeTableFieldInput>
+
 // ==================== OUTPUT SCHEMAS ====================
 
 // Base response schema
@@ -615,6 +660,26 @@ export const getAllDatabasesOutput = baseResponse.extend({
   databases: z.array(z.string())
 })
 export type GetAllDatabasesOutput = z.infer<typeof getAllDatabasesOutput>
+
+export const updateFieldValueOutput = baseResponse.extend({
+  document: documentData.optional()
+})
+export type UpdateFieldValueOutput = z.infer<typeof updateFieldValueOutput>
+
+export const updateTableFieldOutput = baseResponse.extend({
+  schema: tableConfig.optional()
+})
+export type UpdateTableFieldOutput = z.infer<typeof updateTableFieldOutput>
+
+export const addTableFieldOutput = baseResponse.extend({
+  schema: tableConfig.optional()
+})
+export type AddTableFieldOutput = z.infer<typeof addTableFieldOutput>
+
+export const removeTableFieldOutput = baseResponse.extend({
+  schema: tableConfig.optional()
+})
+export type RemoveTableFieldOutput = z.infer<typeof removeTableFieldOutput>
 
 // === ADD ===
 
