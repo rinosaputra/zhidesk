@@ -382,7 +382,7 @@ export type DatabaseExistsInput = z.infer<typeof databaseExistsInput>
 export const initializeDatabaseInput = z.object({
   databaseId,
   databaseName: z.string().min(1, 'Database name is required'),
-  tables: z.array(tableConfig)
+  reset: z.boolean().optional().default(false)
 })
 export type InitializeDatabaseInput = z.infer<typeof initializeDatabaseInput>
 

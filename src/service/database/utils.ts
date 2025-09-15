@@ -13,6 +13,9 @@ export class DatabaseUtils {
     // Untuk environment lain, gunakan direktori current
     return join(process.cwd(), 'data')
   }
+  static getMetadataPathPath(): string {
+    return join(this.getBaseDataPath(), 'database.json')
+  }
 
   static async ensureDirectoryExists(path: string): Promise<void> {
     try {

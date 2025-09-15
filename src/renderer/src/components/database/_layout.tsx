@@ -1,6 +1,5 @@
 // File: src/renderer/src/components/database/_layout.tsx
 import React from 'react'
-import { DatabaseDialog } from './dialog'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import useDatabaseStore from './store'
 import { Button, buttonVariants } from '../ui/button'
@@ -134,7 +133,6 @@ const DatabaseLayout: React.FC = () => {
         {/* Content */}
         {ready && <Outlet />}
       </div>
-      <DatabaseDialog />
     </>
   )
 }

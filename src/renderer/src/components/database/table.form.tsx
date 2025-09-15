@@ -31,6 +31,7 @@ import {
 import { FieldEditor } from './field.editor'
 import { fieldTypes } from './const'
 import useDatabaseStore from './store'
+import DatabaseTableAI from './table.ai'
 
 const DatabaseFormTable: React.FC = () => {
   const queryClient = useQueryClient()
@@ -63,13 +64,16 @@ const DatabaseFormTable: React.FC = () => {
       <div className="space-y-6">
         <Form {...form}>
           <Tabs defaultValue={'basic'}>
-            <TabsList>
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="fields">Fields</TabsTrigger>
-              <TabsTrigger value="options">Options</TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between gap-2">
+              <TabsList className="flex-1">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="fields">Fields</TabsTrigger>
+                <TabsTrigger value="options">Options</TabsTrigger>
+              </TabsList>
+              <DatabaseTableAI onReset={(data) => form.reset(data)} />
+            </div>
 
-            <TabsContent value="basic" className="space-y-4">
+            <TabsContent value="basic" className="space-y-4 mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

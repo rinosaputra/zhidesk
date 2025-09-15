@@ -19,7 +19,8 @@ import {
   ObjectFieldSchema,
   ReferenceFieldSchema,
   StringFieldSchema,
-  Table
+  Table,
+  TableSchema
 } from './types'
 import { AggregationStage, DocumentData, QueryOptions, SearchOptions } from './types'
 import { v4 as uuidv4 } from 'uuid' // Tambahkan import UUID
@@ -33,7 +34,7 @@ export class DatabaseService {
   private dbs: Record<string, Low<Record<string, DocumentData>>> = {}
   private generators: Map<string, DatabaseGenerator> = new Map()
   private baseDataPath: string = DatabaseUtils.getBaseDataPath()
-  private databaseMetadataPath: string = join(this.baseDataPath, 'database.json')
+  private databaseMetadataPath: string = DatabaseUtils.getMetadataPathPath() // join(this.baseDataPath, 'database.json')
 
   private constructor() {
     this.initializeBaseDirectories().catch(console.error)
@@ -85,42 +86,40 @@ export class DatabaseService {
   }
 
   // Database management
-  async initializeDatabase(
-    databaseId: string,
-    databaseName: string,
-    tables: Table[] = []
-  ): Promise<boolean> {
-    const databasePath = join(this.baseDataPath, databaseId)
-
+  async initializeDatabase(databaseId: string, databaseName: string): Promise<boolean> {
     try {
-      await DatabaseUtils.ensureDirectoryExists(databasePath)
+      const load = await this.loadDatabaseMetadata()
 
       // Gabungkan dengan contoh tables jika diperlukan
-      const allTables = tables.length > 0 ? tables : [exampleUserTable, examplePostTable]
+      const allTables =
+        load[databaseId]?.tables.length > 0
+          ? load[databaseId].tables
+          : [exampleUserTable, examplePostTable]
 
-      const generator = new DatabaseGenerator({
+      // Validasi semua tables
+      const validatedTables = allTables.map((table) => TableSchema.parse(table))
+
+      const database: Database = {
         name: databaseName,
-        tables: allTables
-      })
-
-      this.generators.set(databaseId, generator)
+        version: 1,
+        tables: validatedTables,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
 
       // Load existing metadata
       const metadata = await this.loadDatabaseMetadata()
 
       // Update metadata
-      metadata[databaseId] = {
-        name: databaseName,
-        version: 1,
-        tables: generator.getAllTables() as Table[],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-
+      metadata[databaseId] = database
       await this.saveDatabaseMetadata(metadata)
 
+      // Initialize generator
+      const generator = new DatabaseGenerator(database)
+      this.generators.set(databaseId, generator)
+
       // Initialize semua tables
-      for (const table of generator.getAllTables()) {
+      for (const table of validatedTables) {
         await this.initializeTable(databaseId, table.name)
       }
 
@@ -186,25 +185,63 @@ export class DatabaseService {
     return this.dbs[dbKey]!
   }
 
-  private getGenerator(databaseId: string): DatabaseGenerator {
-    const generator = this.generators.get(databaseId)
+  private async getGenerator(databaseId: string): Promise<DatabaseGenerator> {
+    let generator = this.generators.get(databaseId)
+
     if (!generator) {
-      throw new Error(`Database ${databaseId} not initialized. Call initializeDatabase first.`)
+      // Coba load dari metadata jika generator belum ada di memory
+      const metadata = await this.loadDatabaseMetadata()
+      const database = metadata[databaseId]
+
+      if (!database) {
+        throw new Error(`Database ${databaseId} not found. Call initializeDatabase first.`)
+      }
+
+      generator = new DatabaseGenerator(database)
+      this.generators.set(databaseId, generator)
     }
+
     return generator
   }
 
   // Table operations
   async createDatabaseTable(databaseId: string, tableConfig: Table): Promise<boolean> {
     try {
-      const generator = this.getGenerator(databaseId)
-      generator.registerTable(tableConfig)
+      // Load metadata
+      const metadata = await this.loadDatabaseMetadata()
+      const database = metadata[databaseId]
 
+      if (!database) {
+        throw new Error(`Database ${databaseId} not found`)
+      }
+
+      // Check if table already exists
+      if (database.tables.some((t) => t.name === tableConfig.name)) {
+        throw new Error(`Table ${tableConfig.name} already exists in database ${databaseId}`)
+      }
+
+      // Validasi table config
+      const validatedTable = TableSchema.parse(tableConfig)
+
+      // Update metadata - tambahkan table baru
+      database.tables.push(validatedTable)
+      database.updatedAt = new Date()
+      metadata[databaseId] = database
+
+      // Simpan metadata
+      await this.saveDatabaseMetadata(metadata)
+
+      // Update generator dengan schema yang baru
+      const generator = new DatabaseGenerator(database)
+      this.generators.set(databaseId, generator)
+
+      // Initialize table file untuk lowdb
       await this.initializeTable(databaseId, tableConfig.name)
+
       return true
     } catch (error) {
       console.error('Error creating table:', error)
-      return false
+      throw error // Propagate error untuk handling yang lebih baik
     }
   }
 
@@ -676,7 +713,7 @@ export class DatabaseService {
 
   async create(databaseId: string, tableName: string, data: DocumentData): Promise<DocumentData> {
     try {
-      const generator = this.getGenerator(databaseId)
+      const generator = await this.getGenerator(databaseId)
       const db = await this.getDatabase(databaseId, tableName)
 
       const validatedData = generator.validateData(tableName, {
@@ -712,7 +749,7 @@ export class DatabaseService {
     items: DocumentData[]
   ): Promise<DocumentData[]> {
     try {
-      const generator = this.getGenerator(databaseId)
+      const generator = await this.getGenerator(databaseId)
       const db = await this.getDatabase(databaseId, tableName)
 
       const validatedItems = items.map((item) => {
@@ -751,7 +788,7 @@ export class DatabaseService {
 
   async update(databaseId: string, tableName: string, id: string, data: any): Promise<any> {
     try {
-      const generator = this.getGenerator(databaseId)
+      const generator = await this.getGenerator(databaseId)
       const db = await this.getDatabase(databaseId, tableName)
 
       const existingData = db.data[id]
@@ -785,7 +822,7 @@ export class DatabaseService {
     update: any
   ): Promise<number> {
     try {
-      const generator = this.getGenerator(databaseId)
+      const generator = await this.getGenerator(databaseId)
       const db = await this.getDatabase(databaseId, tableName)
 
       const dataArray = Object.values(db.data || {})
@@ -825,7 +862,7 @@ export class DatabaseService {
     value: any
   ): Promise<DocumentData> {
     try {
-      const generator = this.getGenerator(databaseId)
+      const generator = await this.getGenerator(databaseId)
       const db = await this.getDatabase(databaseId, tableName)
 
       const existingData = db.data[id]
@@ -865,7 +902,7 @@ export class DatabaseService {
 
   async delete(databaseId: string, tableName: string, id: string): Promise<boolean> {
     try {
-      const generator = this.getGenerator(databaseId)
+      const generator = await this.getGenerator(databaseId)
       const db = await this.getDatabase(databaseId, tableName)
       const table = generator.getTable(tableName)
 
@@ -892,7 +929,7 @@ export class DatabaseService {
 
   async deleteMany(databaseId: string, tableName: string, query: any): Promise<number> {
     try {
-      const generator = this.getGenerator(databaseId)
+      const generator = await this.getGenerator(databaseId)
       const db = await this.getDatabase(databaseId, tableName)
       const table = generator.getTable(tableName)
       const dataArray = Object.values(db.data || {})
@@ -1010,7 +1047,7 @@ export class DatabaseService {
     updates: Partial<Field>
   ): Promise<Table> {
     try {
-      // const generator = this.getGenerator(databaseId)
+      // const generator = await this.getGenerator(databaseId)
       const metadata = await this.loadDatabaseMetadata()
       const database = metadata[databaseId]
 
@@ -1071,7 +1108,7 @@ export class DatabaseService {
 
   async addTableField(databaseId: string, tableName: string, field: Field): Promise<Table> {
     try {
-      // const generator = this.getGenerator(databaseId)
+      // const generator = await this.getGenerator(databaseId)
       const metadata = await this.loadDatabaseMetadata()
       const database = metadata[databaseId]
 
@@ -1123,7 +1160,7 @@ export class DatabaseService {
 
   async removeTableField(databaseId: string, tableName: string, fieldName: string): Promise<Table> {
     try {
-      // const generator = this.getGenerator(databaseId)
+      // const generator = await this.getGenerator(databaseId)
       const metadata = await this.loadDatabaseMetadata()
       const database = metadata[databaseId]
 

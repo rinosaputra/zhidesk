@@ -352,9 +352,7 @@ export const orpc = createTanstackQueryUtils(getORPCClient(), {
 
 // Custom hooks untuk collection operations
 export const useCollections = () => {
-  return useQuery(
-    orpc.collection.getAll.queryOptions()
-  )
+  return useQuery(orpc.collection.getAll.queryOptions())
 }
 ```
 
@@ -488,9 +486,7 @@ const count = await orpc.collection.document.count.call({
 ```typescript
 // Custom hooks untuk collection operations
 export const useCollections = () => {
-  return useQuery(
-    orpc.collection.getAll.queryOptions()
-  )
+  return useQuery(orpc.collection.getAll.queryOptions())
 }
 
 export const useCollectionDocuments = (collectionName: string, query?: object) => {
@@ -574,6 +570,7 @@ npm run test -- src/schema/collection/__tests__/zod-generator.test.ts
 ```
 
 Test suite mencakup:
+
 - Schema generation dan validation
 - Type inference dan coercion
 - Default values extraction

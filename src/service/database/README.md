@@ -107,6 +107,7 @@ const result = await orpc.database.find.call({
 ### Struktur File yang Dioptimasi
 
 **Format Lama (Array):**
+
 ```json
 [
   {
@@ -123,6 +124,7 @@ const result = await orpc.database.find.call({
 ```
 
 **Format Baru (Object dengan ID sebagai Key):**
+
 ```json
 {
   "uuid-1": {
@@ -214,13 +216,13 @@ Support MongoDB-like aggregation pipeline:
 
 ## Performance Characteristics
 
-| Operation | Complexity | Keterangan |
-|-----------|------------|------------|
-| `findById()` | O(1) | Langsung akses melalui key |
-| `update()` | O(1) | Langsung akses melalui key |
-| `delete()` | O(1) | Langsung akses melalui key |
-| `find()` | O(n) | Perlu konversi ke array untuk filtering |
-| `create()` | O(1) | Insert dengan key yang sudah diketahui |
+| Operation    | Complexity | Keterangan                              |
+| ------------ | ---------- | --------------------------------------- |
+| `findById()` | O(1)       | Langsung akses melalui key              |
+| `update()`   | O(1)       | Langsung akses melalui key              |
+| `delete()`   | O(1)       | Langsung akses melalui key              |
+| `find()`     | O(n)       | Perlu konversi ke array untuk filtering |
+| `create()`   | O(1)       | Insert dengan key yang sudah diketahui  |
 
 ## Validation Features
 
@@ -460,7 +462,7 @@ if (response.success) {
 3. **Migration**: Schema migration utilities
 4. **Replication**: Multi-database replication
 5. **Caching**: Query result caching untuk performance
-6. **Secondary Indexes**: Index untuk field selain _id
+6. **Secondary Indexes**: Index untuk field selain \_id
 
 ---
 

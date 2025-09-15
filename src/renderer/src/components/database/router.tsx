@@ -3,6 +3,9 @@ import { RouteObject } from 'react-router-dom'
 
 export const DatabaseRouter: RouteObject = {
   path: ROUTES.DATABASE.$path(),
+  lazy: async () => ({
+    Component: (await import('./_root')).default
+  }),
   children: [
     {
       index: true,
