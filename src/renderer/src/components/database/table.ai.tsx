@@ -30,9 +30,11 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { orpc } from '@renderer/lib/orpc-query'
 import { toast } from 'sonner'
 import { Table, TableSchema } from './types'
+import useDatabaseStore from './store'
 
 const DatabaseTableAI: React.FC<{ onReset(data: Table): void }> = ({ onReset }) => {
   const [open, setOpen] = React.useState(false)
+  const { databaseId } = useDatabaseStore()
   const { isLoading, data } = useQuery(orpc.ai.validateApiKey.queryOptions({ enabled: open }))
   const {
     mutateAsync,
@@ -48,6 +50,7 @@ const DatabaseTableAI: React.FC<{ onReset(data: Table): void }> = ({ onReset }) 
       toast.promise(
         () =>
           mutateAsync({
+            databaseId,
             description: message.text!
             // files: message.files
           }),

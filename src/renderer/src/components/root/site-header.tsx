@@ -51,7 +51,7 @@ export const SiteHeader: React.FC<React.ComponentProps<'header'>> = ({ className
     <header
       {...props}
       className={cn(
-        'sticky top-0 z-50 flex w-full items-center border-b bg-sidebar select-none',
+        'sticky top-0 z-50 flex w-full items-center border-b bg-background dark:bg-sidebar select-none',
         className
       )}
     >

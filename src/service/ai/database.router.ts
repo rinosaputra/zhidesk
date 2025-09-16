@@ -27,7 +27,7 @@ export const aiDatabaseRouter = {
     .output(generateTableSchemaOutput)
     .handler(async ({ input }) => {
       try {
-        const table = await aiDatabaseService.generateTableSchema(input.description, input.options)
+        const table = await aiDatabaseService.generateTableSchema(input)
         return {
           success: true,
           table

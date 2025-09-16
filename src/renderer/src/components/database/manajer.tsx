@@ -18,8 +18,7 @@ const DatabaseManajer: React.FC = () => {
         () =>
           database.initialize.call({
             databaseId: 'default',
-            databaseName: 'Default',
-            tables: []
+            databaseName: 'Default'
           }),
         {
           loading: `Initialize Database`,

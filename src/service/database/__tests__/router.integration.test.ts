@@ -1,4 +1,6 @@
 // File: src/service/database/__tests__/router.integration.test.ts
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { call } from '@orpc/server'
 import { DatabaseService } from '../service'

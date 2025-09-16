@@ -14,7 +14,8 @@ src/service/database/
 ├── service.ts        # DatabaseService - core implementation
 ├── router.ts         # ORPC router endpoints
 ├── examples.ts       # Contoh table configurations
-├── database.json     # Metadata database (new)
+├── utils.ts          # Utility functions untuk path management
+├── database.json     # Metadata database (centralized metadata storage)
 └── README.md         # Dokumentasi ini
 ```
 
@@ -81,7 +82,7 @@ Singleton class yang mengelola semua operasi database dengan struktur data yang 
 const db = DatabaseService.getInstance()
 
 // Initialize database dengan metadata terpusat
-await db.initializeDatabase('my-db', 'My Database', [userTable, postTable])
+await db.initializeDatabase('my-db', 'My Database')
 
 // CRUD operations dengan performa tinggi untuk operasi berdasarkan ID
 await db.create('my-db', 'users', { email: 'user@example.com', age: 25 })
@@ -104,38 +105,56 @@ const result = await orpc.database.find.call({
 
 ## Struktur Data Baru & Optimasi
 
-### Struktur File yang Dioptimasi
+### Centralized Metadata System
 
-**Format Lama (Array):**
+**File `data/database.json`** sekarang menyimpan metadata terpusat untuk semua database:
 
 ```json
-[
-  {
-    "_id": "uuid-1",
-    "email": "user@example.com",
-    "name": "John Doe"
-  },
-  {
-    "_id": "uuid-2",
-    "email": "admin@example.com",
-    "name": "Jane Smith"
+{
+  "my-app": {
+    "name": "My Application",
+    "version": 1,
+    "tables": [
+      {
+        "name": "users",
+        "label": "Users",
+        "fields": [...],
+        "timestamps": true,
+        "softDelete": false
+      },
+      {
+        "name": "posts",
+        "label": "Blog Posts",
+        "fields": [...],
+        "timestamps": true,
+        "softDelete": true
+      }
+    ],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
   }
-]
+}
 ```
 
-**Format Baru (Object dengan ID sebagai Key):**
+### Struktur File yang Dioptimasi
+
+**Format Data (Object dengan ID sebagai Key):**
 
 ```json
 {
   "uuid-1": {
     "_id": "uuid-1",
     "email": "user@example.com",
-    "name": "John Doe"
+    "name": "John Doe",
+    "_createdAt": "2024-01-01T00:00:00.000Z",
+    "_updatedAt": "2024-01-01T00:00:00.000Z"
   },
   "uuid-2": {
     "_id": "uuid-2",
     "email": "admin@example.com",
-    "name": "Jane Smith"
+    "name": "Jane Smith",
+    "_createdAt": "2024-01-01T00:00:00.000Z",
+    "_updatedAt": "2024-01-01T00:00:00.000Z"
   }
 }
 ```
@@ -146,22 +165,7 @@ const result = await orpc.database.find.call({
 2. **Update Efisien**: Update berdasarkan ID langsung mengakses key yang spesifik
 3. **Delete Optimal**: Delete berdasarkan ID langsung menghapus key
 4. **Konsistensi Data**: Struktur storage sama dengan struktur memory
-
-### Metadata Terpusat
-
-File `data/database.json` menyimpan metadata semua database:
-
-```json
-{
-  "my-app": {
-    "name": "My Application",
-    "version": 1,
-    "tables": [...],
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
+5. **Metadata Terpusat**: Semua schema disimpan di satu tempat untuk konsistensi
 
 ## Field Types Supported
 
@@ -193,12 +197,20 @@ File `data/database.json` menyimpan metadata semua database:
 - `delete()` - **O(1)** Delete single document (soft/hard delete)
 - `deleteMany()` - Delete multiple documents
 
+### Schema Management Operations
+
+- `createDatabaseTable()` - Buat table baru dan simpan ke metadata
+- `updateTableField()` - Update field schema dalam table
+- `addTableField()` - Tambah field baru ke table
+- `removeTableField()` - Hapus field dari table (dengan validasi)
+
 ### Query Operations
 
 - `count()` - Count documents matching query
 - `distinct()` - Get distinct values for field
 - `exists()` - Check if document exists
 - `search()` - Full-text search across multiple fields
+- `findByField()` - Find documents by specific field value
 
 ### Aggregation Operations
 
@@ -254,7 +266,7 @@ createTable({
 
 ## Example Usage
 
-### 1. Initialize Database dengan Metadata
+### 1. Initialize Database dengan Metadata Terpusat
 
 ```typescript
 import { DatabaseService } from './service'
@@ -265,14 +277,18 @@ const db = DatabaseService.getInstance()
 // Check metadata terpusat
 const exists = await db.databaseExists('my-app')
 if (!exists) {
-  await db.initializeDatabase('my-app', 'My Application', [exampleUserTable, examplePostTable])
+  await db.initializeDatabase('my-app', 'My Application')
+
+  // Tambahkan tables setelah initialize
+  await db.createDatabaseTable('my-app', exampleUserTable)
+  await db.createDatabaseTable('my-app', examplePostTable)
 }
 ```
 
-### 2. Create Document dengan Auto-ID
+### 2. Create Document dengan Auto-ID dan Timestamps
 
 ```typescript
-// ID akan digenerate otomatis jika tidak disediakan
+// ID dan timestamps akan digenerate otomatis
 const user = await db.create('my-app', 'users', {
   email: 'john@example.com',
   firstName: 'John',
@@ -282,9 +298,34 @@ const user = await db.create('my-app', 'users', {
 })
 
 console.log(user._id) // UUID yang digenerate otomatis
+console.log(user._createdAt) // Timestamp otomatis
+console.log(user._updatedAt) // Timestamp otomatis
 ```
 
-### 3. Query Documents dengan Performa Tinggi
+### 3. Schema Management yang Dinamis
+
+```typescript
+// Tambah field baru ke table yang sudah ada
+await db.addTableField('my-app', 'users', {
+  name: 'phoneNumber',
+  label: 'Phone Number',
+  type: 'string',
+  validation: {
+    format: 'phone'
+  }
+})
+
+// Update field yang sudah ada
+await db.updateTableField('my-app', 'users', 'email', {
+  required: true,
+  unique: true,
+  validation: {
+    format: 'email'
+  }
+})
+```
+
+### 4. Query Documents dengan Performa Tinggi
 
 ```typescript
 // Operasi sangat cepat - O(1)
@@ -298,15 +339,21 @@ const activeUsers = await db.find('my-app', 'users', {
 
 // Search dengan full-text
 const results = await db.search('my-app', 'users', 'john', ['firstName', 'lastName', 'email'])
+
+// Find by specific field
+const usersByRole = await db.findByField('my-app', 'users', 'role', 'admin')
 ```
 
-### 4. Update dan Delete yang Efisien
+### 5. Update dan Delete yang Efisien
 
 ```typescript
 // Update sangat cepat - O(1)
 const updatedUser = await db.update('my-app', 'users', 'user-id', {
   isActive: false
 })
+
+// Update field value spesifik
+await db.updateFieldValue('my-app', 'users', 'user-id', 'isActive', true)
 
 // Delete sangat cepat - O(1)
 const deleted = await db.delete('my-app', 'users', 'user-id')
@@ -336,13 +383,16 @@ if (!result.success) {
 
 ## Best Practices
 
-### 1. Database Initialization dengan Metadata
+### 1. Database Initialization dengan Metadata Terpusat
 
 ```typescript
 // Selalu gunakan databaseExists() yang memeriksa metadata terpusat
 const exists = await db.databaseExists('my-app')
 if (!exists) {
-  await db.initializeDatabase('my-app', 'My App', tables)
+  await db.initializeDatabase('my-app', 'My App')
+  // Tambahkan tables setelah initialize
+  await db.createDatabaseTable('my-app', userTable)
+  await db.createDatabaseTable('my-app', postTable)
 }
 ```
 
@@ -369,18 +419,44 @@ try {
 }
 ```
 
-### 4. Error Handling untuk Operasi Critical
+### 4. Schema Management yang Aman
 
 ```typescript
-// Gunakan try-catch untuk operations yang critical
+// Selalu validasi sebelum modifikasi schema
 try {
-  const result = await db.update('my-app', 'users', id, updateData)
-  if (!result.success) {
-    throw new Error(result.error)
-  }
+  await db.addTableField('my-app', 'users', newField)
 } catch (error) {
-  // Handle error appropriately
+  if (error.message.includes('already exists')) {
+    // Handle field already exists
+  }
 }
+
+// Hindari menghapus field yang required atau berisi data
+try {
+  await db.removeTableField('my-app', 'users', 'email')
+} catch (error) {
+  if (error.message.includes('required')) {
+    // Handle cannot remove required field
+  }
+}
+```
+
+## Integration dengan AI Service
+
+Database service terintegrasi dengan AI service untuk generate table schema:
+
+```typescript
+import { AIDatabaseService } from '../ai/database'
+
+const aiService = AIDatabaseService.getInstance()
+
+// Generate table schema dari deskripsi natural language
+const tableSchema = await aiService.generateTableSchema(
+  'Create a users table with email, name, and role fields'
+)
+
+// Gunakan generated schema
+await db.createDatabaseTable('my-app', tableSchema)
 ```
 
 ## Testing
@@ -403,12 +479,12 @@ describe('DatabaseService', () => {
   })
 
   it('should initialize database dengan metadata', async () => {
-    await db.initializeDatabase('test', 'Test DB', [])
+    await db.initializeDatabase('test', 'Test DB')
     expect(await db.databaseExists('test')).toBe(true)
   })
 
   it('should perform O(1) findById operations', async () => {
-    await db.initializeDatabase('test', 'Test DB', [])
+    await db.initializeDatabase('test', 'Test DB')
     const user = await db.create('test', 'users', { name: 'Test User' })
 
     // This should be very fast

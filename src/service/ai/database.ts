@@ -2,9 +2,9 @@
 // File: src/service/ai/database.ts
 import { AIGenerator } from './generator'
 import { DatabaseService } from '../database/service'
-import { Table, DocumentData } from '../database/types'
+import { Table, DocumentData, Database } from '../database/types'
 import { z } from 'zod'
-import { ValidateApiKeyOutput } from './types'
+import { GenerateTableSchemaInput, ValidateApiKeyOutput } from './types'
 import { DatabaseUtils } from '@service/database/utils'
 import { readFileSync } from 'fs'
 import { ModelMessage } from 'ai'
@@ -42,15 +42,17 @@ export class AIDatabaseService {
   /**
    * Generate table schema menggunakan AI
    */
-  async generateTableSchema(
-    description: string,
-    options: Partial<Parameters<AIGenerator['generateObject']>[2]> = {}
-  ): Promise<Table> {
+  async generateTableSchema({
+    databaseId,
+    description,
+    options
+  }: GenerateTableSchemaInput): Promise<Table> {
     try {
       await this.validateAIService()
 
       // Path ke database existing
       const existingDatabaseContent = readFileSync(DatabaseUtils.getMetadataPathPath(), 'utf-8')
+      const database = JSON.parse(existingDatabaseContent) as Record<string, Database>
 
       const prompt = `Create a complete database table schema based on this description: ${description}
 
@@ -96,7 +98,7 @@ Return ONLY the JSON object without any additional text or explanation.`
             },
             {
               type: 'text',
-              text: `EXISTING DATABASE STRUCTURE:\n${existingDatabaseContent}\n\nPlease ensure the new table is consistent with this existing structure.`
+              text: `EXISTING DATABASE STRUCTURE:\n${JSON.stringify({ databaseId: database[databaseId] }, null, 2)}\n\nPlease ensure the new table is consistent with this existing structure.`
             }
           ]
         }

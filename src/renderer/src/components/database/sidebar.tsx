@@ -86,7 +86,7 @@ const SelectTable: React.FC = () => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <SidebarMenuButton
-          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground border h-8"
+          className="bg-background dark:bg-transparent border h-8"
           disabled={isLoading}
         >
           {data?.databases.find((database) => database === value) ?? 'Select database...'}
@@ -155,7 +155,7 @@ const SearchField: React.FC = () => {
       <SidebarInput
         id="search"
         placeholder="Search Table"
-        className="pl-8 bg-transparent"
+        className="bg-background dark:bg-transparent pl-8"
         value={searchTable}
         onChange={(e) => {
           setSearchTable(e.target.value)

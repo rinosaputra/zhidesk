@@ -49,6 +49,7 @@ export type UpdateAIConfigInput = z.infer<typeof updateAIConfigInput>
 
 // Schema untuk database - Input
 export const generateTableSchemaInput = z.object({
+  databaseId: z.string().min(1, 'Database ID is required'),
   description: z.string().min(1, 'Description is required'),
   options: AIConfigSchema.optional()
 })
