@@ -1,4 +1,5 @@
 import { SchemaDatabaseStore } from '@schema/database'
+import { DatabaseClient } from '@schema/database/client'
 import { createLowDB, CreateLowDBProps, LowWithLodash, pathDefaultLowDB } from '@service/libs/lowdb'
 import _ from 'lodash'
 
@@ -21,9 +22,11 @@ export class DatabaseService {
       filename: 'database'
     },
     tables: {}
+
   }
   private databases: Databases | null = null
   private tables: Record<string, Table> = {}
+  private schema: DatabaseClient | null = null
 
   constructor(props: Partial<Partial<CreateLowDBProps<SchemaDatabaseStore>>>) {
     this.initializeDatabases(props)
@@ -39,6 +42,7 @@ export class DatabaseService {
       this.databases = createLowDB(this.props.database)
       this.databases.read()
       if (props.defaultValue) this.databases.write()
+      this.schema = new DatabaseClient(this.databases)
       return this.databases
     } catch (error) {
       throw new Error((error as Error).message)
@@ -50,6 +54,11 @@ export class DatabaseService {
     const database = this.databases.chain.get(databaseId)
     if (database.isUndefined()) throw new Error(`Database not found`)
     return database
+  }
+
+  getTableSchema(tableId: string): Table {
+    const table = this.databases
+    return table
   }
 
   initializeTable(tableId: string, defaultValue?: RecordAny): Table {
@@ -68,11 +77,6 @@ export class DatabaseService {
     } catch (error) {
       throw new Error((error as Error).message)
     }
-  }
-
-  getTableSchema(tableId: string): Table {
-    const table = this.initializeTable(tableId)
-    return table
   }
 
   getTable(tableId: string): Table {
