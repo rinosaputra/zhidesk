@@ -7,7 +7,8 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     alias: {
-      '@service/database': resolve(__dirname, 'src/service/database')
+      '@service/database': resolve(__dirname, 'src/service/database'),
+      '@schema': resolve(__dirname, 'src/schema')
     },
     globals: true
   }

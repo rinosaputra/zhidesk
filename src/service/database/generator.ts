@@ -29,7 +29,9 @@ export class DatabaseGenerator {
       version: databaseConfig.version || 1,
       tables: databaseConfig.tables || [],
       createdAt: databaseConfig.createdAt || new Date(),
-      updatedAt: databaseConfig.updatedAt || new Date()
+      updatedAt: databaseConfig.updatedAt || new Date(),
+      label: 'Default Database',
+      description: 'Description of the default database'
     }
 
     // Register semua table yang diberikan

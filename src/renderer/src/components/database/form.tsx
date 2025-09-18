@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, X, Save, Loader2, Table } from 'lucide-react'
 import { toast } from 'sonner'
 import { database } from '@renderer/lib/orpc-query'
-import { TableSchema } from './types'
+import { DatabaseSchema, TableSchema } from './types'
 import {
   DialogContent,
   DialogDescription,
@@ -31,25 +31,18 @@ import {
 import { FieldEditor } from './field.editor'
 import { fieldTypes } from './const'
 import useDatabaseStore from './store'
-import DatabaseTableAI from './table.ai'
 
-const DatabaseFormTable: React.FC = () => {
+const DatabaseForm: React.FC = () => {
   const queryClient = useQueryClient()
   const { setModal } = useDatabaseStore()
   const form = useForm({
-    resolver: zodResolver(TableSchema),
+    resolver: zodResolver(DatabaseSchema),
     defaultValues: {
+      createdAt: new Date(),
+      updatedAt: new Date(),
       name: '',
-      label: '',
-      description: '',
-      timestamps: true,
-      softDelete: false,
-      fields: [],
-      indexes: [],
-      validation: {
-        strict: false,
-        additionalProperties: false
-      }
+      tables: [],
+      version: 1
     }
   })
   const { isPending, mutateAsync } = useMutation(database.table.create.mutationOptions())
@@ -60,11 +53,9 @@ const DatabaseFormTable: React.FC = () => {
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Table className="h-5 w-5" />
-          Create New Table
+          Create Database
         </DialogTitle>
-        <DialogDescription>
-          Define your table structure with fields and properties
-        </DialogDescription>
+        <DialogDescription>Define your database</DialogDescription>
       </DialogHeader>
       <div className="space-y-6">
         <Form {...form}>
@@ -75,7 +66,7 @@ const DatabaseFormTable: React.FC = () => {
                 <TabsTrigger value="fields">Fields</TabsTrigger>
                 <TabsTrigger value="options">Options</TabsTrigger>
               </TabsList>
-              <DatabaseTableAI onReset={(data) => form.reset(data)} />
+              {/* <DatabaseTableAI onReset={(data) => form.reset(data)} /> */}
             </div>
 
             <TabsContent value="basic" className="space-y-4 mt-2">
@@ -277,4 +268,4 @@ const DatabaseFormTable: React.FC = () => {
   )
 }
 
-export default DatabaseFormTable
+export default DatabaseForm

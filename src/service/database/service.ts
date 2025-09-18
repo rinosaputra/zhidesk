@@ -94,13 +94,17 @@ export class DatabaseService {
       const allTables =
         load[databaseId]?.tables.length > 0
           ? load[databaseId].tables
-          : [exampleUserTable, examplePostTable]
+          : databaseId === 'default'
+            ? [exampleUserTable, examplePostTable]
+            : []
 
       // Validasi semua tables
       const validatedTables = allTables.map((table) => TableSchema.parse(table))
 
       const database: Database = {
         name: databaseName,
+        description: load[databaseId].description || '',
+        label: load[databaseId].label || '',
         version: 1,
         tables: validatedTables,
         createdAt: new Date(),

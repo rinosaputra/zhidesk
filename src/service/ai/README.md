@@ -19,22 +19,25 @@ src/service/ai/
 ## Core Components
 
 ### 1. AIGenerator (`generator.ts`)
+
 Core AI engine yang berkomunikasi dengan Google Gemini API:
 
 ```typescript
 const aiGenerator = new AIGenerator()
-const result = await aiGenerator.generateText("Hello, world!")
+const result = await aiGenerator.generateText('Hello, world!')
 ```
 
 ### 2. AIDatabaseService (`database.ts`)
+
 Service yang mengintegrasikan AI dengan database system:
 
 ```typescript
 const aiService = AIDatabaseService.getInstance()
-const tableSchema = await aiService.generateTableSchema("Create users table with email and name")
+const tableSchema = await aiService.generateTableSchema('Create users table with email and name')
 ```
 
 ### 3. ORPC Routers (`router.ts`, `database.router.ts`)
+
 Endpoint ORPC untuk komunikasi antara processes.
 
 ## AI Models Supported
@@ -57,15 +60,17 @@ const config = {
 ## Features
 
 ### 1. Table Schema Generation
+
 Generate complete table schema dari deskripsi natural language:
 
 ```typescript
 const table = await aiService.generateTableSchema(
-  "Create a users table with email, name, and role fields"
+  'Create a users table with email, name, and role fields'
 )
 ```
 
 ### 2. Sample Data Generation
+
 Generate realistic sample data untuk table yang sudah ada:
 
 ```typescript
@@ -77,27 +82,27 @@ const sampleData = await aiService.generateSampleData(
 ```
 
 ### 3. Query Generation
+
 Convert natural language queries ke database query objects:
 
 ```typescript
 const query = await aiService.generateQuery(
   'my-database',
   'users',
-  "Find all active users with role admin"
+  'Find all active users with role admin'
 )
 ```
 
 ### 4. Data Analysis
+
 Analisis data dan berikan insights:
 
 ```typescript
-const analysis = await aiService.analyzeData(
-  'my-database',
-  'users'
-)
+const analysis = await aiService.analyzeData('my-database', 'users')
 ```
 
 ### 5. Migration Script Generation
+
 Generate migration scripts antara schema versions:
 
 ```typescript
@@ -107,30 +112,27 @@ const migrationScript = await aiService.generateMigration(oldTable, newTable)
 ## Basic AI Operations
 
 ### Text Generation
+
 ```typescript
-const result = await aiGenerator.generateText(
-  "Write a poem about databases",
-  { temperature: 0.8 }
-)
+const result = await aiGenerator.generateText('Write a poem about databases', { temperature: 0.8 })
 ```
 
 ### Structured Object Generation
+
 ```typescript
 const schema = z.object({
   name: z.string(),
   age: z.number()
 })
 
-const result = await aiGenerator.generateObject(
-  "Generate a user profile",
-  schema
-)
+const result = await aiGenerator.generateObject('Generate a user profile', schema)
 ```
 
 ### Multiple Objects Generation
+
 ```typescript
 const result = await aiGenerator.generateObjects(
-  "Generate user profiles",
+  'Generate user profiles',
   schema,
   3 // jumlah objects
 )
@@ -153,12 +155,14 @@ await databaseService.createMany('my-db', 'users', sampleData)
 ## ORPC Endpoints
 
 ### AI Database Operations
+
 - `generateTableSchema` - Generate table schema dari deskripsi
 - `generateSampleData` - Generate sample data untuk table
 - `generateQuery` - Generate query dari natural language
 - `analyzeData` - Analisis data dan berikan insights
 
 ### Basic AI Operations
+
 - `generateText` - Generate text dari prompt
 - `generateObject` - Generate structured object
 - `generateObjects` - Generate multiple objects
@@ -168,9 +172,10 @@ await databaseService.createMany('my-db', 'users', sampleData)
 ## Example Usage
 
 ### 1. Generate Complete Table Schema
+
 ```typescript
 const response = await orpc.ai.database.generateTableSchema.call({
-  description: "Create products table with name, price, category, and stock quantity",
+  description: 'Create products table with name, price, category, and stock quantity',
   options: {
     temperature: 0.3 // More deterministic output
   }
@@ -185,6 +190,7 @@ if (response.success) {
 ```
 
 ### 2. Generate and Insert Sample Data
+
 ```typescript
 // Generate sample data
 const sampleResponse = await orpc.ai.database.generateSampleData.call({
@@ -204,11 +210,12 @@ if (sampleResponse.success) {
 ```
 
 ### 3. Natural Language Query
+
 ```typescript
 const queryResponse = await orpc.ai.database.generateQuery.call({
   databaseId: 'my-shop',
   tableName: 'products',
-  naturalLanguageQuery: "Find all electronics products under $100"
+  naturalLanguageQuery: 'Find all electronics products under $100'
 })
 
 if (queryResponse.success) {
@@ -235,6 +242,7 @@ Semua operations return response dengan format:
 ## Best Practices
 
 ### 1. API Key Management
+
 ```typescript
 // Validasi API key sebelum penggunaan
 const validation = await orpc.ai.validateApiKey.call()
@@ -244,6 +252,7 @@ if (!validation.valid) {
 ```
 
 ### 2. Temperature Settings
+
 ```typescript
 // Untuk schema generation, gunakan temperature rendah
 await aiService.generateTableSchema(description, { temperature: 0.3 })
@@ -253,6 +262,7 @@ await aiService.generateText(prompt, { temperature: 0.9 })
 ```
 
 ### 3. Error Handling
+
 ```typescript
 try {
   const result = await aiService.generateTableSchema(description)
@@ -302,9 +312,7 @@ describe('AIDatabaseService', () => {
   })
 
   it('should generate valid table schema', async () => {
-    const table = await aiService.generateTableSchema(
-      "Create simple users table"
-    )
+    const table = await aiService.generateTableSchema('Create simple users table')
     expect(table).toHaveProperty('name')
     expect(table).toHaveProperty('fields')
     expect(table.fields.length).toBeGreaterThan(0)

@@ -9,12 +9,14 @@
 ![ORPC](https://img.shields.io/badge/ORPC-FF6B35?style=for-the-badge&logo=json&logoColor=white)
 ![Zod](https://img.shields.io/badge/Zod-3E67B1?style=for-the-badge&logo=zod&logoColor=white)
 ![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=for-the-badge&logo=reactquery&logoColor=white)
+![Google Gemini](https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)
 
-Platform desktop low-code untuk membangun aplikasi bisnis dengan cepat melalui konfigurasi JSON, dibangun dengan Electron, React, TypeScript, Vite, LowDB, ORPC, dan Zod.
+Platform desktop low-code untuk membangun aplikasi bisnis dengan cepat melalui konfigurasi JSON, dibangun dengan Electron, React, TypeScript, Vite, LowDB, ORPC, Zod, dan Google Gemini AI.
 
 ## ✨ Fitur Utama
 
 - **🏗️ Low-Code Platform** - Bangun aplikasi dari konfigurasi JSON tanpa menulis kode manual
+- **🤖 AI-Powered Development** - Generate schema, data, dan query dengan Google Gemini AI
 - **📝 JSON-based UI Generator** - Hasilkan form dan antarmuka CRUD dari konfigurasi JSON
 - **✅ JSON-based Zod Schema Generator** - Buat skema validasi otomatis dari konfigurasi
 - **📊 JSON-based PDF Generator** - Hasilkan laporan PDF dari template JSON
@@ -24,6 +26,9 @@ Platform desktop low-code untuk membangun aplikasi bisnis dengan cepat melalui k
 - **⚡ State Management** - Zustand untuk manajemen state yang efisien
 - **🔄 TanStack Query** - State management dan caching untuk data asynchronous
 - **🛡️ Type-Safe Validation** - Validasi data dengan Zod schema generation
+- **🔍 Advanced Query & Filtering** - Dukungan untuk query kompleks dengan operator MongoDB-style
+- **📈 Real-time Updates** - Sistem notifikasi dan pembaruan data secara real-time
+- **🔐 Role-based Access Control** - Manajemen akses berbasis peran untuk keamanan data
 
 ## 🏗️ Arsitektur
 
@@ -34,6 +39,8 @@ zhidesk/
 ├── src/
 │   ├── main/                 # Proses utama Electron
 │   │   ├── main.ts          # Entry point Electron
+│   │   ├── menu.ts          # Konfigurasi menu aplikasi
+│   │   └── window.ts        # Manajemen window
 │   ├── preload/
 │   │   ├── index.ts         # Skrip preload dengan ORPC client
 │   │   └── index.d.ts       # Type definitions untuk preload
@@ -44,76 +51,37 @@ zhidesk/
 │   │   │   ├── hooks/       # Custom hooks (useORPC, useInvalidateQueries, dll)
 │   │   │   ├── stores/      # State management dengan Zustand
 │   │   │   ├── lib/         # Library dan utilities (ORPC, query client, dll)
-│   │   │   └── types/       # Type definitions
+│   │   │   ├── types/       # Type definitions
+│   │   │   └── utils/       # Utility functions dan helpers
 │   │   └── index.html       # Template HTML
 │   ├── service/             # Service layer dan database operations
-│   │   ├── database/        # Service untuk operasi LowDB
-│   │   ├── orpc/            # ORPC router dan handlers
-│   │   │   ├── router.ts    # Main router definition
-│   │   │   └── collection.router.ts # Collection management router
-│   │   └── index.ts         # Barrel exports
-│   ├── generators/          # Generator utilities
-│   │   ├── formGenerator.ts # Generator UI form dari JSON
-│   │   ├── zodSchemaGenerator.ts # Generator Zod schema dari JSON
-│   │   └── pdfGenerator.ts  # Generator PDF dari JSON
-│   ├── types/               # Definisi TypeScript bersama
-│   └── schema/              # Skema validasi Zod dan DocGenerator
-│       ├── collection/      # Schema collection system
-│       │   ├── doc.ts       # Type definitions dan Zod schemas
-│       │   ├── doc.class.ts # DocGenerator class implementation
-│       │   └── __tests__/   # Test files untuk schema generation
-│       └── generator/       # Zod generator utilities
+│   │   ├── ai/              # AI Service dengan Google Gemini integration
+│   │   │   ├── types.ts     # Schema Zod dan type definitions
+│   │   │   ├── generator.ts # AIGenerator - core AI engine
+│   │   │   ├── database.ts  # AIDatabaseService - integrasi AI dengan database
+│   │   │   ├── router.ts    # ORPC router endpoints utama
+│   │   │   └── database.router.ts # ORPC router khusus operasi database + AI
+│   │   ├── database/        # Database Service dengan performa tinggi
+│   │   │   ├── types.ts     # Schema Zod dan type definitions
+│   │   │   ├── factories.ts # Factory functions untuk field dan table
+│   │   │   ├── generator.ts # DatabaseGenerator untuk schema generation
+│   │   │   ├── service.ts   # DatabaseService - core implementation
+│   │   │   ├── router.ts    # ORPC router endpoints
+│   │   │   ├── examples.ts  # Contoh table configurations
+│   │   │   └── utils.ts     # Utility functions untuk path management
+│   │   └── orpc/            # ORPC router dan handlers
+│   │       └── router.ts    # Main router definition
+│   └── types/               # Definisi TypeScript bersama
 ├── data/                    # Penyimpanan data LowDB (JSON files)
-│   ├── db.json             # Main database file (metadata)
-│   ├── users.json          # Collection file untuk users
-│   ├── settings.json       # Collection file untuk settings
-│   └── *.json              # File collection lainnya
+│   ├── database.json       # Centralized metadata storage
+│   ├── my-app/             # Database directory
+│   │   ├── users.json      # Table file dengan struktur teroptimasi
+│   │   └── products.json   # Table file dengan struktur teroptimasi
+│   └── backups/            # Backup files
 ├── dist/                   # Direktori output build
-└── build/                  # Sumber daya build
+├── build/                  # Sumber daya build
+└── tests/                  # Test files dan fixtures
 ```
-
-## 📦 Konfigurasi Pengembangan
-
-### Konfigurasi TypeScript
-
-Proyek menggunakan beberapa konfigurasi TypeScript:
-
-- **`tsconfig.node.json`**: Konfigurasi proses utama dan skrip preload
-- **`tsconfig.web.json`**: Konfigurasi proses renderer
-- **Konfigurasi yang diperluas**: Dibangun di atas fondasi `@electron-toolkit/tsconfig`
-
-### Konfigurasi Vite
-
-Sistem build menggunakan electron-vite dengan konfigurasi yang dioptimalkan:
-
-```typescript
-// Alias dikonfigurasi untuk impor yang bersih:
-{
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, './src/renderer'),
-      '@service': resolve(__dirname, './src/service'),
-      '_types': resolve(__dirname, './src/types'),
-      '@schema': resolve(__dirname, './src/schema'),
-    },
-  },
-}
-```
-
-### Alias Path
-
-**Alias Proses Utama:**
-
-- `@service/*` → `src/service/*`
-- `_types/*` → `src/types/*`
-- `@schema/*` → `src/schema/*`
-
-**Alias Proses Renderer:**
-
-- `@/*` → `src/renderer/src/*`
-- `@service/*` → `src/service/*`
-- `_types/*` → `src/types/*`
-- `@schema/*` → `src/schema/*`
 
 ## 🚀 Memulai
 
@@ -122,6 +90,7 @@ Sistem build menggunakan electron-vite dengan konfigurasi yang dioptimalkan:
 - **Node.js** 18.0.0 atau lebih tinggi
 - **npm**, **yarn**, atau **pnpm** sebagai package manager
 - **Git** untuk kontrol versi
+- **Google Gemini API Key** (opsional, untuk fitur AI)
 
 ### Instalasi
 
@@ -138,7 +107,15 @@ Sistem build menggunakan electron-vite dengan konfigurasi yang dioptimalkan:
    npm install
    ```
 
-3. **Mulai mode pengembangan**
+3. **Setup environment**
+
+   ```bash
+   cp .env.example .env
+   # Edit file .env dan tambahkan Google Gemini API key
+   GOOGLE_GENAI_API_KEY=your_api_key_here
+   ```
+
+4. **Mulai mode pengembangan**
    ```bash
    npm run dev
    ```
@@ -169,6 +146,18 @@ npm run format
 
 # Jalankan test suite
 npm run test
+
+# Jalankan test dengan coverage
+npm run test:coverage
+
+# Jalankan test dalam watch mode
+npm run test:watch
+
+# Generate dokumentasi API
+npm run docs
+
+# Analisis bundle size
+npm run analyze
 ```
 
 ## 🎯 Teknologi & Paket Utama
@@ -183,406 +172,200 @@ npm run test
 - **ORPC** - Remote Procedure Call yang type-safe untuk komunikasi proses
 - **Zod** - Validasi dan deklarasi skema TypeScript-first
 - **TanStack Query** - State management dan caching untuk data asynchronous
+- **Google Gemini AI** - AI-powered development dan data generation
 
 ### Manajemen State & Data
 
 - **Zustand** - Solusi manajemen state minimalis dan efisien
 - **TanStack Query** - State management dan caching untuk data asynchronous
 - **React Hook Form** - Manajemen form dengan validasi
-- **DocGenerator** - Generator Zod schema dari konfigurasi JSON
 
 ### UI & Komponen
 
 - **Tailwind CSS** - Framework CSS utility-first
 - **ChadcnUI** - Library komponen yang dirancang dengan indah
 - **Lucide React** - Library ikon yang elegan
+- **React Router DOM** - Routing untuk aplikasi single-page
+- **React Table** - Tabel dengan fitur sorting, filtering, dan pagination
+
+### AI Integration
+
+- **Google Gemini API** - AI model untuk code generation dan data analysis
+- **Custom AI Service** - Integrasi AI dengan database operations
 
 ### Build & Pengembangan
 
 - **electron-vite** - Konfigurasi Vite yang dioptimalkan untuk Electron
 - **@electron-toolkit** - Alat penting untuk pengembangan Electron
 - **Vitest** - Testing framework yang cepat
+- **Testing Library** - Utilities untuk testing React components
+- **ESLint** - Linting untuk kode quality
+- **Prettier** - Code formatting
 
-## 🔧 Zod Schema Generator
+## 🏗️ Fitur Database Terbaru
 
-### DocGenerator Class
+### Centralized Metadata System
 
-Zhidesk menyertakan sistem generasi schema Zod yang powerful melalui `DocGenerator`:
-
-```typescript
-import { DocGenerator, createStringSchema, createNumberSchema } from '@schema/collection/doc.class'
-
-// Define schemas
-const userSchemas = [
-  createStringSchema({
-    name: 'name',
-    label: 'Full Name',
-    coerce: true,
-    validation: { min: 2, max: 100 }
-  }),
-  createNumberSchema({
-    name: 'age',
-    label: 'Age',
-    coerce: true,
-    validation: { min: 0, max: 120, int: true }
-  })
-]
-
-// Create generator
-const generator = new DocGenerator(userSchemas)
-
-// Generate and use schemas
-const nameSchema = generator.generate('name')
-const ageSchema = generator.generate('age')
-
-// Validate data
-const validName = nameSchema.parse('John Doe')
-const validAge = ageSchema.parse('25') // Coerced to number
-```
-
-### Supported Schema Types
-
-- **String**: Text fields dengan validasi format (email, url, uuid, phone, password)
-- **Number**: Numeric fields dengan range validation
-- **Boolean**: True/false fields dengan coercion
-- **Date**: Date fields dengan range validation
-- **Enum**: Predefined value validation
-- **Array**: Lists of items dengan validation
-- **Object**: Nested structures dengan validation
-- **Reference**: Relationship ke collections lain
-
-### Collection Schema Generation
+Database service sekarang menggunakan sistem metadata terpusat dengan performa tinggi:
 
 ```typescript
-import { createCollection, createObjectSchema } from '@schema/collection/doc.class'
+// Initialize database dengan metadata terpusat
+await db.initializeDatabase('my-app', 'My Application')
 
-// Define collection schema
-const studentCollection = createCollection({
-  name: 'students',
-  label: 'Students',
-  fields: [
-    createStringSchema({
-      name: 'nisn',
-      label: 'NISN',
-      validation: { length: 10, regex: '^\\d+$' }
-    }),
-    createStringSchema({
-      name: 'name',
-      label: 'Full Name',
-      validation: { min: 2, max: 100 }
-    })
-  ],
-  timestamps: true,
-  softDelete: false
-})
+// Operasi findById() yang sangat cepat - O(1)
+const user = await db.findById('my-app', 'users', 'specific-user-id')
 
-// Register and generate collection schema
-generator.registerCollection(studentCollection)
-const collectionSchema = generator.generateCollectionSchema('students')
-```
-
-### Default Values Extraction
-
-```typescript
-// Extract default values for forms
-const defaults = generator.extractDefaults('student')
-
-// Result:
+// Struktur data teroptimasi dengan ID sebagai key
 {
-  nisn: '',
-  name: '',
-  age: 0,
-  isActive: false,
-  birthDate: undefined,
-  hobbies: [],
-  address: {
-    street: '',
-    city: ''
+  "uuid-1": {
+    "_id": "uuid-1",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "_createdAt": "2024-01-01T00:00:00.000Z",
+    "_updatedAt": "2024-01-01T00:00:00.000Z"
   }
 }
 ```
 
-## 🔧 Implementasi ORPC
+### Performance Characteristics
 
-### Server Side (Main Process) - Collection Router
+| Operation    | Complexity | Keterangan                              |
+| ------------ | ---------- | --------------------------------------- |
+| `findById()` | O(1)       | Langsung akses melalui key              |
+| `update()`   | O(1)       | Langsung akses melalui key              |
+| `delete()`   | O(1)       | Langsung akses melalui key              |
+| `find()`     | O(n)       | Perlu konversi ke array untuk filtering |
+| `create()`   | O(1)       | Insert dengan key yang sudah diketahui  |
 
-```typescript
-// src/service/orpc/router.ts
-import { os } from '@orpc/server'
-import * as z from 'zod'
-import { CollectionRouter } from './collection.router'
+## 🤖 Integrasi AI dengan Google Gemini
 
-export const oRPCRouter = {
-  // Collection management operations
-  collection: CollectionRouter,
+Zhidesk sekarang memiliki integrasi AI yang powerful dengan Google Gemini:
 
-  // Additional services can be added here
-  utils: {
-    // Utility functions
-  }
-}
-
-export type oRPCRouter = typeof oRPCRouter
-```
-
-### Client Side (Renderer Process) - Updated Usage
+### AI-Powered Schema Generation
 
 ```typescript
-// Contoh penggunaan collection operations yang type-safe dengan ORPC
-const collections = await orpc.collection.getAll.call()
-const documents = await orpc.collection.document.getAll.call({
-  collectionName: 'users'
+// Generate table schema dari deskripsi natural language
+const tableSchema = await orpc.ai.database.generateTableSchema.call({
+  description: 'Create products table with name, price, category, and stock quantity'
 })
-const newDocument = await orpc.collection.document.create.call({
-  collectionName: 'users',
-  data: { name: 'John Doe', email: 'john@example.com' }
+
+// Generate sample data yang realistic
+const sampleData = await orpc.ai.database.generateSampleData.call({
+  databaseId: 'my-shop',
+  tableName: 'products',
+  count: 10
 })
 ```
 
-### Integration dengan TanStack Query
+### Natural Language Query
 
 ```typescript
-// src/renderer/src/lib/orpc-query.ts
-import { createTanstackQueryUtils } from '@orpc/tanstack-query'
-import { getORPCClient } from './orpc-client'
-
-export const orpc = createTanstackQueryUtils(getORPCClient(), {
-  path: ['zhidesk', 'v1']
-})
-
-// Custom hooks untuk collection operations
-export const useCollections = () => {
-  return useQuery(orpc.collection.getAll.queryOptions())
-}
-```
-
-## 📊 Struktur Database LowDB (Updated)
-
-Aplikasi menggunakan LowDB dengan struktur file terpisah untuk setiap collection:
-
-```typescript
-interface DatabaseSchema {
-  collections: Record<string, string> // Path ke file collection
-  _meta: {
-    version: string
-    createdAt: string
-    lastModified: string
-  }
-}
-
-interface CollectionData {
-  documents: any[]
-  _meta: {
-    createdAt: string
-    lastModified: string
-  }
-}
-```
-
-- **Struktur Terdistribusi**: Setiap collection memiliki file JSON terpisah
-- **Pengembangan**: File database utama di `data/db.json`, collections di `data/*.json`
-- **Produksi**: File disimpan di direktori data pengguna (userData)
-- **Manajemen Collections**: Collections dibuat dan dikelola secara dinamis melalui ORPC
-
-## 🔧 Database Operations (Updated)
-
-### Collection Management
-
-```typescript
-// Create new collection
-await orpc.collection.create.call({
-  name: 'students',
-  label: 'Students',
-  fields: [
-    {
-      name: 'nisn',
-      type: 'string',
-      label: 'NISN',
-      validation: { required: true, length: 10 }
-    },
-    {
-      name: 'name',
-      type: 'string',
-      label: 'Full Name',
-      validation: { required: true, min: 2, max: 100 }
-    }
-  ],
-  timestamps: true,
-  softDelete: false
-})
-
-// Get all collections
-const { collections } = await orpc.collection.getAll.call()
-
-// Delete collection
-await orpc.collection.delete.call({ collectionName: 'old_collection' })
-```
-
-### Document Operations
-
-```typescript
-// CRUD operations dengan type-safe validation
-const result = await orpc.collection.document.create.call({
-  collectionName: 'students',
-  data: {
-    nisn: '1234567890',
-    name: 'John Doe',
-    age: 18,
-    grade: 'XII'
-  }
-})
-
-const students = await orpc.collection.document.getAll.call({
-  collectionName: 'students',
-  limit: 10,
-  offset: 0
-})
-
-const student = await orpc.collection.document.getById.call({
-  collectionName: 'students',
-  id: 'student-123'
-})
-
-await orpc.collection.document.update.call({
-  collectionName: 'students',
-  id: 'student-123',
-  data: { grade: 'XII-A' }
-})
-
-await orpc.collection.document.delete.call({
-  collectionName: 'students',
-  id: 'student-123'
+// Query database menggunakan natural language
+const queryResponse = await orpc.ai.database.generateQuery.call({
+  databaseId: 'my-shop',
+  tableName: 'products',
+  naturalLanguageQuery: 'Find all electronics products under $100'
 })
 ```
 
-### Advanced Query Operations
+### AI Data Analysis
 
 ```typescript
-// Query dengan filter
-const results = await orpc.collection.document.find.call({
-  collectionName: 'students',
-  query: { grade: 'XII', age: { $gte: 18 } }
-})
-
-// Pagination
-const page = await orpc.collection.document.paginate.call({
-  collectionName: 'students',
-  page: 2,
-  limit: 20,
-  query: { grade: 'XII' }
-})
-
-// Count documents
-const count = await orpc.collection.document.count.call({
-  collectionName: 'students',
-  query: { grade: 'XII' }
+// Dapatkan insights dari data yang ada
+const analysis = await orpc.ai.database.analyzeData.call({
+  databaseId: 'my-shop',
+  tableName: 'products'
 })
 ```
 
-## 🎯 Integration dengan TanStack Query (Updated)
+## 📦 Konfigurasi Pengembangan
 
-### Query Hooks untuk Collections
+### Environment Variables
 
-```typescript
-// Custom hooks untuk collection operations
-export const useCollections = () => {
-  return useQuery(orpc.collection.getAll.queryOptions())
-}
+Buat file `.env` untuk konfigurasi environment:
 
-export const useCollectionDocuments = (collectionName: string, query?: object) => {
-  return useQuery(
-    orpc.collection.document.getAll.queryOptions({
-      input: { collectionName, ...(query && { query }) }
-    })
-  )
-}
+```env
+# Application
+VITE_APP_NAME=Zhidesk
+VITE_APP_VERSION=1.0.0
 
-export const useCreateDocument = (collectionName: string) => {
-  const queryClient = useQueryClient()
+# Database
+VITE_DB_PATH=./data
+VITE_BACKUP_PATH=./backups
 
-  return useMutation(
-    orpc.collection.document.create.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: orpc.collection.document.getAll.key({ collectionName })
-        })
-      }
-    })
-  )
-}
+# AI Configuration
+GOOGLE_GENAI_API_KEY=your_api_key_here
+VITE_AI_MODEL=gemini-2.5-flash
+VITE_AI_TEMPERATURE=0.7
+
+# Features
+VITE_ENABLE_ANALYTICS=false
+VITE_ENABLE_UPDATE_CHECK=true
+VITE_ENABLE_AI=true
+
+# Development
+VITE_DEV_TOOLS=true
 ```
 
-## 🔧 Error Handling dan Validation
+### Alias Path
 
-```typescript
-// Type-safe error handling
-try {
-  const result = await orpc.collection.document.create.call({
-    collectionName: 'students',
-    data: invalidData
-  })
-} catch (error) {
-  if (isDefinedError(error)) {
-    // Handle specific error types
-    switch (error.name) {
-      case 'ZodError':
-        console.error('Validation failed:', error.details)
-        break
-      case 'CollectionNotFoundError':
-        console.error('Collection does not exist')
-        break
-      case 'DocumentNotFoundError':
-        console.error('Document not found')
-        break
-      default:
-        console.error('Unknown error:', error.message)
-    }
-  }
-}
-```
+**Alias Proses Utama:**
 
-## 📊 Backup dan Restore Operations
+- `@service/*` → `src/service/*`
+- `_types/*` → `src/types/*`
+- `@main/*` → `src/main/*`
 
-```typescript
-// Backup database
-const backupPath = await orpc.utils.backup.call()
+**Alias Proses Renderer:**
 
-// Restore dari backup
-const success = await orpc.utils.restore.call(backupPath)
-
-// Get database statistics
-const stats = await orpc.utils.getStats.call()
-```
+- `@/*` → `src/renderer/src/*`
+- `@service/*` → `src/service/*`
+- `_types/*` → `src/types/*`
+- `@preload/*` → `src/preload/*`
 
 ## 🧪 Testing
 
 Zhidesk menggunakan Vitest untuk testing dengan coverage yang komprehensif:
 
 ```bash
-# Run tests
+# Run semua tests
 npm run test
 
-# Run tests with coverage
+# Run tests dengan coverage
 npm run test:coverage
 
+# Run tests dalam watch mode
+npm run test:watch
+
 # Run specific test file
-npm run test -- src/schema/collection/__tests__/zod-generator.test.ts
+npm run test -- src/service/database/__tests__/service.test.ts
+
+# Run tests untuk AI service
+npm run test -- src/service/ai/__tests__/generator.test.ts
+
+# Run e2e tests
+npm run test:e2e
 ```
 
 Test suite mencakup:
 
 - Schema generation dan validation
-- Type inference dan coercion
-- Default values extraction
-- Collection schema generation
-- Error handling dan messages
-- Database operations dengan file terpisah
+- AI integration dan text generation
+- Database operations dengan performa tinggi
+- Error handling dan validation
+- UI component testing
+- Integration tests untuk ORPC communication
+- E2E tests dengan Playwright
 
 ## 📦 Membangun untuk Produksi
 
 ```bash
-# Build aplikasi lengkap
+# Build aplikasi lengkap untuk current platform
 npm run build
+
+# Build untuk platform tertentu
+npm run build:win
+npm run build:mac
+npm run build:linux
 
 # Build hanya proses main
 npm run build:main
@@ -590,20 +373,80 @@ npm run build:main
 # Build hanya proses renderer
 npm run build:renderer
 
+# Build untuk distribusi (installer)
+npm run dist
+
 # Aplikasi yang terbangun akan tersedia di dist/
+```
+
+## 🚀 Deployment
+
+### Desktop Application
+
+1. **Build aplikasi**:
+
+   ```bash
+   npm run build
+   ```
+
+2. **Distribusikan installer**:
+   - Windows: `dist/zhidesk Setup 1.0.0.exe`
+   - macOS: `dist/zhidesk-1.0.0.dmg`
+   - Linux: `dist/zhidesk-1.0.0.AppImage`
+
+### Update Mechanism
+
+Zhidesk mendukung automatic updates:
+
+```typescript
+// Check for updates
+const updateInfo = await orpc.app.checkForUpdates.call()
+
+// Download and install updates
+await orpc.app.downloadUpdate.call()
+await orpc.app.installUpdate.call()
+
+// Restart aplikasi
+await orpc.app.restart.call()
 ```
 
 ## 🤝 Berkontribusi
 
-1. Ikuti struktur proyek yang telah ditetapkan
-2. Gunakan TypeScript dan alias path secara konsisten
-3. Pertahankan keamanan tipe di semua lapisan
-4. Gunakan ORPC untuk komunikasi antara proses
-5. Manfaatkan Zustand untuk state management
-6. Gunakan TanStack Query untuk data fetching
-7. Tambahkan tests untuk fitur baru
-8. Gunakan DocGenerator untuk schema validation
-9. Ikuti pola database terdistribusi dengan file terpisah
+Kami menyambut kontribusi dari komunitas! Berikut panduan untuk berkontribusi:
+
+### Development Workflow
+
+1. **Fork repository**
+2. **Buat feature branch**:
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. **Commit changes**:
+   ```bash
+   git commit -m 'Add amazing feature'
+   ```
+4. **Push ke branch**:
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+5. **Buat Pull Request**
+
+### Coding Standards
+
+- Gunakan TypeScript strict mode
+- Ikuti ESLint dan Prettier configuration
+- Tulis tests untuk semua fitur baru
+- Dokumentasikan kode dengan JSDoc
+- Gunakan semantic commit messages
+- Maintain consistency dengan existing codebase
+
+### Area Kontribusi
+
+- **AI Integration**: Tambahkan support untuk AI providers lainnya
+- **Database Features**: Enhanced query capabilities dan performance optimizations
+- **UI Components**: Komponen baru dan improvement existing components
+- **Documentation**: Perbaikan dokumentasi dan contoh penggunaan
+- **Testing**: Tambahan test coverage dan testing utilities
 
 ## 📄 Lisensi
 
@@ -611,6 +454,6 @@ Lisensi MIT - lihat file LICENSE untuk detailnya.
 
 ---
 
-**Zhidesk** - Build Applications Faster with JSON Configuration 🚀
+**Zhidesk** - Build Applications Faster with JSON Configuration and AI 🚀
 
-Platform low-code desktop yang memungkinkan Anda membangun aplikasi bisnis dengan cepat melalui konfigurasi JSON, dengan fitur form generation, validasi otomatis, dan laporan PDF yang powerful.
+Platform low-code desktop yang memungkinkan Anda membangun aplikasi bisnis dengan cepat melalui konfigurasi JSON dan AI-powered development, dengan fitur form generation, validasi otomatis, database teroptimasi, dan laporan PDF yang powerful.
