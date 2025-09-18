@@ -1,4 +1,4 @@
-import { SchemaDatabaseStore } from '@schema/database'
+import { SchemaDatabase, SchemaDatabaseStore } from '@schema/database'
 import { DatabaseClient, DatabaseClientFnProps } from '@schema/database/client'
 import { createLowDB, CreateLowDBProps, LowWithLodash, pathDefaultLowDB } from '@service/libs/lowdb'
 import _ from 'lodash'
@@ -57,10 +57,6 @@ export class DatabaseService {
     return database
   }
 
-  getTableSchema(props: DatabaseClientFnProps): ReturnType<DatabaseClient['generateZodSchema']> {
-    return this.schema.generateZodSchema(props, {})
-  }
-
   initializeTable(
     { tableId }: Pick<DatabaseClientFnProps, 'tableId'>,
     defaultValue?: RecordAny
@@ -84,6 +80,11 @@ export class DatabaseService {
 
   getTable(props: DatabaseClientFnProps): Table {
     const table = this.initializeTable(props)
+    if (!SchemaDatabase.safeParse(table.data).success) throw new Error('Table error')
     return table
+  }
+
+  getTableSchema(props: DatabaseClientFnProps): ReturnType<DatabaseClient['generateZodSchema']> {
+    return this.schema.generateZodSchema(props, {})
   }
 }
