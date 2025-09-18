@@ -273,6 +273,7 @@ describe('DatabaseClient', () => {
         validation: { min: 8 }
       }
       const zodSchema = client.generateZodString(column)
+      // @ts-ignore #infinite
       const result = zodSchema.safeParse('username')
       expect(result.success).toBe(true)
       expect(zodSchema.safeParse('user').success).toBe(false)
@@ -289,6 +290,7 @@ describe('DatabaseClient', () => {
         validation: { format: 'email' }
       }
       const zodSchema = client.generateZodString(column)
+      // @ts-ignore #infinite
       expect(zodSchema.safeParse('test@example.com').success).toBe(true)
       expect(zodSchema.safeParse('invalid-email').success).toBe(false)
     })
@@ -334,6 +336,7 @@ describe('DatabaseClient', () => {
         validation: { defaultValue: 'active' }
       }
       const zodSchema = client.generateZodString(column)
+      // @ts-ignore #infinite
       expect(zodSchema.safeParse(undefined).success).toBe(true)
       if (zodSchema.safeParse(undefined).success) {
         expect(zodSchema.safeParse(undefined).data).toBe('active')
@@ -369,6 +372,7 @@ describe('DatabaseClient', () => {
         type: 'number'
       }
       const zodSchema = client.generateZodNumber(column)
+      // @ts-ignore #infinite
       expect(zodSchema.safeParse(null).success).toBe(true)
       expect(zodSchema.safeParse(undefined).success).toBe(true)
     })
@@ -413,6 +417,7 @@ describe('DatabaseClient', () => {
         }
       }
       const zodSchema = client.generateZodEnum(column)
+      // @ts-ignore #infinite
       expect(zodSchema.safeParse(undefined).success).toBe(true)
       if (zodSchema.safeParse(undefined).success) {
         expect(zodSchema.safeParse(undefined).data).toBe('user')
@@ -447,6 +452,7 @@ describe('DatabaseClient', () => {
         validation: { defaultValue: true }
       }
       const zodSchema = client.generateZodBoolean(column)
+      // @ts-ignore #infinite
       expect(zodSchema.safeParse(undefined).success).toBe(true)
       if (zodSchema.safeParse(undefined).success) {
         expect(zodSchema.safeParse(undefined).data).toBe(true)
@@ -497,6 +503,7 @@ describe('DatabaseClient', () => {
         }
       }
       const zodSchema = client.generateZodArray(column, {})
+      // @ts-ignore #infinite
       expect(zodSchema.safeParse(['tag1', 'tag2']).success).toBe(true)
       expect(zodSchema.safeParse([]).success).toBe(false) // min: 1
       expect(zodSchema.safeParse(['t']).success).toBe(false) // min length: 2
@@ -544,14 +551,14 @@ describe('DatabaseClient', () => {
   describe('generateZod', () => {
     it('should generate zod schema for string type', () => {
       const column = client.getTableColumns(props).values().value()[0] // name column
-      const zodSchema = client.generateZod(column, {})
+      const zodSchema = client.generateZodSchemaForColumn(column, {})
       expect(zodSchema.safeParse('John Doe').success).toBe(true)
       expect(zodSchema.safeParse('Jo').success).toBe(false) // min: 3
     })
 
     it('should generate zod schema for number type', () => {
       const column = client.getTableColumns(props).values().value()[2] // age column
-      const zodSchema = client.generateZod(column, {})
+      const zodSchema = client.generateZodSchemaForColumn(column, {})
       expect(zodSchema.safeParse(25).success).toBe(true)
       expect(zodSchema.safeParse(17).success).toBe(false) // min: 18
       expect(zodSchema.safeParse(null).success).toBe(true) // nullable
@@ -559,7 +566,7 @@ describe('DatabaseClient', () => {
 
     it('should generate zod schema for enum type', () => {
       const column = client.getTableColumns(props).values().value()[3] // role column
-      const zodSchema = client.generateZod(column, {})
+      const zodSchema = client.generateZodSchemaForColumn(column, {})
       expect(zodSchema.safeParse('admin').success).toBe(true)
       expect(zodSchema.safeParse('user').success).toBe(true)
       expect(zodSchema.safeParse('invalid').success).toBe(false)
@@ -567,28 +574,28 @@ describe('DatabaseClient', () => {
 
     it('should generate zod schema for boolean type', () => {
       const column = client.getTableColumns(props).values().value()[4] // isVerified column
-      const zodSchema = client.generateZod(column, {})
+      const zodSchema = client.generateZodSchemaForColumn(column, {})
       expect(zodSchema.safeParse(true).success).toBe(true)
       expect(zodSchema.safeParse(false).success).toBe(true)
     })
 
     it('should generate zod schema for date type', () => {
       const column = client.getTableColumns(props).values().value()[5] // birthDate column
-      const zodSchema = client.generateZod(column, {})
+      const zodSchema = client.generateZodSchemaForColumn(column, {})
       const pastDate = new Date(Date.now() - 86400000)
       expect(zodSchema.safeParse(pastDate).success).toBe(true)
     })
 
     it('should generate zod schema for array type', () => {
       const column = client.getTableColumns(props).values().value()[6] // tags column
-      const zodSchema = client.generateZod(column, {})
+      const zodSchema = client.generateZodSchemaForColumn(column, {})
       expect(zodSchema.safeParse(['tag1', 'tag2']).success).toBe(true)
       expect(zodSchema.safeParse(['t']).success).toBe(false) // min length: 2
     })
 
     it('should generate zod schema for object type', () => {
       const column = client.getTableColumns(props).values().value()[7] // address column
-      const zodSchema = client.generateZod(column, {})
+      const zodSchema = client.generateZodSchemaForColumn(column, {})
       const validAddress = { street: 'Main St', city: 'New York', zipCode: '12345' }
       expect(zodSchema.safeParse(validAddress).success).toBe(true)
     })
@@ -597,7 +604,7 @@ describe('DatabaseClient', () => {
       const postsTableId = mockDb.tables[1]._id
       const postsProps = { databaseId, tableId: postsTableId }
       const column = client.getTableColumns(postsProps).values().value()[2] // authorId column (reference)
-      const zodSchema = client.generateZod(column, {})
+      const zodSchema = client.generateZodSchemaForColumn(column, {})
       expect(zodSchema.safeParse('some-id').success).toBe(true)
     })
   })

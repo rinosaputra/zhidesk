@@ -14,7 +14,8 @@ export const SchemaCore = z.object({
   _updatedAt: z
     .date()
     .describe('Timestamp when the document was last updated')
-    .default(() => new Date())
+    .default(() => new Date()),
+  _deletedAt: z.date().describe('Timestamp when the document was deleted').optional()
 })
 
 export type SchemaCore = z.infer<typeof SchemaCore>
@@ -271,3 +272,141 @@ export const SchemaDatabaseStore = z.record(
   })
 )
 export type SchemaDatabaseStore = z.infer<typeof SchemaDatabaseStore>
+
+export const SchemaDatabaseProps = z.object({
+  databaseId: z.string()
+})
+export type SchemaDatabaseProps = z.infer<typeof SchemaDatabaseProps>
+
+export const SchemaTableProps = z.object({
+  tableId: z.string(),
+  part: z.string().optional()
+})
+export type SchemaTableProps = z.infer<typeof SchemaTableProps>
+
+export const SchemaDatabaseTableProps = SchemaDatabaseProps.and(SchemaTableProps)
+export type SchemaDatabaseTableProps = z.infer<typeof SchemaDatabaseTableProps>
+
+export function BuildQuerySchemaDatabase<Props extends z.ZodObject, Body extends z.ZodObject>(
+  props: Props,
+  body: Body
+): z.ZodObject<{
+  body: Body
+  props: Props
+}> {
+  return z.object({
+    body,
+    props
+  })
+}
+
+export type BuildSchemaTable<Props, Body> = {
+  body: Body
+  props: Props
+}
+
+export const SchemaAuditLog = z.object({
+  type: z.enum(['database', 'table']),
+  method: z.enum(['insert', 'update', 'delete']),
+  data: z.record(z.string(), z.any()).or(z.record(z.string(), z.any()).array()),
+  date: z.date()
+})
+
+export type SchemaAuditLog = z.infer<typeof SchemaAuditLog>
+
+export const SchemaTableStore = z.object({
+  rows: z.record(z.string(), z.any()),
+  indexs: z.record(z.string(), z.record(z.coerce.string() as z.ZodString, z.string().array()))
+})
+
+export type SchemaTableStore = z.infer<typeof SchemaTableStore>
+
+export const TableFilterOperation = {
+  equals: 'equals',
+  notEquals: 'notEquals',
+  greaterThan: 'greaterThan',
+  greaterThanOrEqual: 'greaterThanOrEqual',
+  lessThan: 'lessThan',
+  lessThanOrEqual: 'lessThanOrEqual',
+  inRange: 'inRange',
+  notInRange: 'notInRange',
+  contains: 'contains',
+  notContains: 'notContains',
+  startsWith: 'startsWith',
+  endsWith: 'endsWith',
+  notStartsWith: 'notStartsWith',
+  notEndsWith: 'notEndsWith',
+  isNull: 'isNull',
+  isNotNull: 'isNotNull',
+  and: 'and',
+  or: 'or',
+  not: 'not',
+  between: 'between',
+  notBetween: 'notBetween',
+  in: 'in',
+  notIn: 'notIn',
+  like: 'like',
+  notLike: 'notLike',
+  iLike: 'iLike',
+  notILike: 'notILike'
+} as const
+export type TableFilterOperation = keyof typeof TableFilterOperation
+export type TableFilterValue = string | number | boolean | Date | null | undefined
+export type TableFilterCondition = {
+  [TableFilterOperation.equals]: TableFilterValue
+  [TableFilterOperation.notEquals]: TableFilterValue
+  [TableFilterOperation.greaterThan]: TableFilterValue
+  [TableFilterOperation.greaterThanOrEqual]: TableFilterValue
+  [TableFilterOperation.lessThan]: TableFilterValue
+  [TableFilterOperation.lessThanOrEqual]: TableFilterValue
+  [TableFilterOperation.inRange]: [TableFilterValue, TableFilterValue]
+  [TableFilterOperation.notInRange]: [TableFilterValue, TableFilterValue]
+  [TableFilterOperation.contains]: TableFilterValue
+  [TableFilterOperation.notContains]: TableFilterValue
+  [TableFilterOperation.startsWith]: TableFilterValue
+  [TableFilterOperation.endsWith]: TableFilterValue
+  [TableFilterOperation.notStartsWith]: TableFilterValue
+  [TableFilterOperation.notEndsWith]: TableFilterValue
+  [TableFilterOperation.isNull]: boolean
+  [TableFilterOperation.isNotNull]: boolean
+  [TableFilterOperation.and]: TableFilterCondition[]
+  [TableFilterOperation.or]: TableFilterCondition[]
+  [TableFilterOperation.not]: TableFilterCondition
+  [TableFilterOperation.between]: [TableFilterValue, TableFilterValue]
+  [TableFilterOperation.notBetween]: [TableFilterValue, TableFilterValue]
+  [TableFilterOperation.in]: TableFilterValue[]
+  [TableFilterOperation.notIn]: TableFilterValue[]
+  [TableFilterOperation.like]: string
+  [TableFilterOperation.notLike]: string
+  [TableFilterOperation.iLike]: string
+  [TableFilterOperation.notILike]: string
+}
+
+export type TableFilterConditionResult<Key extends TableFilterOperation = TableFilterOperation> = {
+  key: Key
+  value: TableFilterCondition[Key]
+}
+
+export const TableSortDirection = {
+  asc: 'asc',
+  desc: 'desc'
+} as const
+
+export type TableSortDirection = keyof typeof TableSortDirection
+
+export type TableQuery = {
+  filter: Record<string, Partial<TableFilterCondition>>
+  sort: Record<string, TableSortDirection>
+  limit: number
+  offset: number
+}
+
+export const TableResponse = z.object({
+  data: z.any(),
+  total: z.number(),
+  limit: z.number(),
+  offset: z.number(),
+  hasMore: z.boolean()
+})
+
+export type TableResponse = z.infer<typeof TableResponse>

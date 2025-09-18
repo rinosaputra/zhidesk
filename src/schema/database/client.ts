@@ -11,64 +11,46 @@ import {
   SchemaColumnBoolean,
   SchemaColumnDate,
   SchemaColumnArray,
-  SchemaColumnObject
+  SchemaColumnObject,
+  SchemaDatabaseProps,
+  SchemaDatabaseTableProps
 } from '.'
 import _ from 'lodash'
 
 interface Options {
-  safety?: boolean
+  useISODateFormat?: boolean
 }
 
-type ISODates = z.ZodISODate | z.ZodISODateTime | z.ZodISOTime
+type ZodISODateTypes = z.ZodISODate | z.ZodISODateTime | z.ZodISOTime
 
-export type TypeOfGenerateZodTypeBase =
-  | string
-  | number
-  | boolean
-  | Date
-  | 'true'
-  | 'false'
-  | undefined
-
-export type TypeOfGenerateZodType =
-  | TypeOfGenerateZodTypeBase
-  | TypeOfGenerateZodTypeBase[]
-  | Record<string, TypeOfGenerateZodTypeBase>
-  | Record<string, TypeOfGenerateZodTypeBase>[]
-
-export type GenerateZodTypeBase =
+export type ZodGeneratedTypePrimitive = string | number | boolean | Date | undefined
+export type ZodGeneratedType =
+  | ZodGeneratedTypePrimitive
+  | ZodGeneratedTypePrimitive[]
+  | Record<string, ZodGeneratedTypePrimitive>
+  | Record<string, ZodGeneratedTypePrimitive>[]
+export type ZodSchemaPrimitive =
   | z.ZodString
   | z.ZodNumber
   | z.ZodBoolean
   | z.ZodDate
   | z.ZodEnum
-  | z.ZodLiteral<'true' | 'false'>
+  | z.ZodLiteral<boolean>
+export type ZodSchemaComposite =
+  | z.ZodArray<ZodSchemaPrimitive>
+  // @ts-ignore #Infinite
+  | z.ZodObject<Record<string, ZodSchemaResult>>
+export type ZodSchemaWithDefault = z.ZodDefault<ZodSchemaPrimitive | ZodSchemaComposite>
+export type ZodSchemaNullable = z.ZodNullable<ZodSchemaPrimitive | ZodSchemaComposite>
+export type ZodSchemaOptional = z.ZodOptional<ZodSchemaPrimitive | ZodSchemaComposite>
+export type ZodSchemaResult =
+  | ZodSchemaPrimitive
+  | ZodSchemaComposite
+  | ZodSchemaWithDefault
+  | ZodSchemaNullable
+  | ZodSchemaOptional
 
-export type GenerateZodType =
-  | GenerateZodTypeBase
-  | z.ZodArray<GenerateZodTypeBase>
-  // @ts-ignore #Type instantiation is excessively deep and possibly infinite.ts(2589)
-  | z.ZodObject<
-      {
-        [x: string]: GenerateZodResult
-      },
-      z.core.$strip
-    >
-export type GenerateZodTypeWithDefault = z.ZodDefault<GenerateZodType>
-export type GenerateZodTypeNullable = z.ZodNullable<GenerateZodType>
-export type GenerateZodTypeOptional = z.ZodOptional<GenerateZodType>
-export type GenerateZodResult =
-  | GenerateZodType
-  | GenerateZodTypeOptional
-  | GenerateZodTypeWithDefault
-  | GenerateZodTypeNullable
-
-type GenerateZodSchemaResult = z.ZodObject<Record<string, GenerateZodResult>>
-
-export interface DatabaseClientFnProps {
-  databaseId: string
-  tableId: string
-}
+type GenerateZodSchemaResult = z.ZodObject<Record<string, ZodSchemaResult>>
 
 type SchemaStoreTables = SchemaDatabaseStore[string]['tables']
 type SchemaStoreColumns = SchemaStoreTables[string]['columns']
@@ -95,15 +77,13 @@ export class DatabaseClient {
     this.instance = _.chain(database)
   }
 
-  getTables({
-    databaseId
-  }: Pick<DatabaseClientFnProps, 'databaseId'>): _.ObjectChain<SchemaStoreTables> {
+  getTables({ databaseId }: SchemaDatabaseProps): _.ObjectChain<SchemaStoreTables> {
     if (!this.instance || this.instance.get(databaseId).isUndefined().value())
       throw new Error('Database not initialized')
     return this.instance.get([databaseId, 'tables'])
   }
 
-  getTable(props: DatabaseClientFnProps): _.ObjectChain<SchemaStoreTables[string]> {
+  getTable(props: SchemaDatabaseTableProps): _.ObjectChain<SchemaStoreTables[string]> {
     const find = this.getTables(props).get(props.tableId)
     if (find.isUndefined().value()) {
       throw new Error(`Table not found`)
@@ -111,20 +91,20 @@ export class DatabaseClient {
     return find
   }
 
-  getTableColumns(props: DatabaseClientFnProps): _.ObjectChain<SchemaStoreColumns> {
+  getTableColumns(props: SchemaDatabaseTableProps): _.ObjectChain<SchemaStoreColumns> {
     return this.getTable(props).get('columns')
   }
 
   setMeta(
-    result: GenerateZodResult,
+    result: ZodSchemaResult,
     { description, name: title, type }: SchemaTableColumn
-  ): GenerateZodResult {
+  ): ZodSchemaResult {
     if (type === 'date') return result.meta({ title, description, format: 'date', type: 'number' })
     if (type === 'number') return result.meta({ title, description, type: 'number' })
     return result.meta({ title, description })
   }
 
-  generateZodString(column: SchemaColumnString): GenerateZodResult {
+  generateZodString(column: SchemaColumnString): ZodSchemaResult {
     if (column.validation?.format) {
       if (column.validation.format === 'email') {
         return z.email() as unknown as z.ZodString
@@ -175,7 +155,7 @@ export class DatabaseClient {
     return schema
   }
 
-  generateZodNumber(column: SchemaColumnNumber): GenerateZodResult {
+  generateZodNumber(column: SchemaColumnNumber): ZodSchemaResult {
     let schema = z.number()
     if (column.validation?.min) {
       schema = schema.min(
@@ -213,7 +193,7 @@ export class DatabaseClient {
     return schema
   }
 
-  generateZodEnum(column: SchemaColumnEnum): GenerateZodResult {
+  generateZodEnum(column: SchemaColumnEnum): ZodSchemaResult {
     const values = column.validation?.options?.map((opt) => opt.value) as [string, ...string[]]
     if (!values || values.length === 0) return z.string()
     let schema = z.enum(values)
@@ -229,8 +209,9 @@ export class DatabaseClient {
     return schema
   }
 
-  generateZodBoolean(column: SchemaColumnBoolean): GenerateZodResult {
-    if (column.validation?.literal) return z.literal(column.validation.literal)
+  generateZodBoolean(column: SchemaColumnBoolean): ZodSchemaResult {
+    if (column.validation?.literal)
+      return z.literal(column.validation.literal === 'true') as z.ZodLiteral<boolean>
     let schema = z.boolean()
     if (column.isNullable) {
       schema = schema.nullable() as unknown as z.ZodBoolean
@@ -244,7 +225,7 @@ export class DatabaseClient {
     return schema
   }
 
-  generateZodDate(column: SchemaColumnDate): GenerateZodResult {
+  generateZodDate(column: SchemaColumnDate): ZodSchemaResult {
     let schema = z.date()
     if (column.validation) {
       if (column.validation.min) {
@@ -273,8 +254,8 @@ export class DatabaseClient {
     return schema
   }
 
-  generateZodDateISO(column: SchemaColumnDate): GenerateZodResult {
-    let schema: ISODates | z.ZodDefault<ISODates>
+  generateZodDateISO(column: SchemaColumnDate): ZodSchemaResult {
+    let schema: ZodISODateTypes | z.ZodDefault<ZodISODateTypes>
     if (column.validation?.uiComponent === 'time') {
       schema = z.iso.time() as z.ZodISOTime
     } else if (column.validation?.uiComponent === 'date') {
@@ -296,21 +277,25 @@ export class DatabaseClient {
         schema = schema.min(Date.now())
       }
       if (column.validation?.defaultValue) {
-        schema = schema.default(String(column.validation.defaultValue)) as z.ZodDefault<ISODates>
+        schema = schema.default(
+          String(column.validation.defaultValue)
+        ) as z.ZodDefault<ZodISODateTypes>
       }
     }
     if (column.isNullable) {
-      schema = schema.nullable() as unknown as ISODates
+      schema = schema.nullable() as unknown as ZodISODateTypes
     }
     if (column.isOptional) {
-      schema = schema.optional() as unknown as ISODates
+      schema = schema.optional() as unknown as ZodISODateTypes
     }
 
     return schema as unknown as z.ZodString
   }
 
-  generateZodArray(column: SchemaColumnArray, options: Options): GenerateZodResult {
-    let schema = z.array(this.generateZod(column.validation.column, options) as GenerateZodTypeBase)
+  generateZodArray(column: SchemaColumnArray, options: Options): ZodSchemaResult {
+    let schema = z.array(
+      this.generateZodSchemaForColumn(column.validation.column, options) as ZodSchemaPrimitive
+    )
     if (column.validation.length) {
       schema = schema.length(column.validation.length)
     }
@@ -320,15 +305,15 @@ export class DatabaseClient {
     if (column.validation.min) {
       schema = schema.min(column.validation.min)
     }
-    return schema as GenerateZodResult
+    return schema as ZodSchemaResult
   }
 
-  generateZodObject(column: SchemaColumnObject, options: Options): GenerateZodResult {
+  generateZodObject(column: SchemaColumnObject, options: Options): ZodSchemaResult {
     let schema = z.object(
       Object.fromEntries(
         column.validation.columns.map((column) => [
           column.name,
-          this.generateZod(column, options) as GenerateZodTypeBase
+          this.generateZodSchemaForColumn(column, options) as ZodSchemaPrimitive
         ])
       )
     )
@@ -341,7 +326,7 @@ export class DatabaseClient {
     return schema
   }
 
-  generateZod(column: SchemaTableColumn, options: Options): GenerateZodResult {
+  generateZodSchemaForColumn(column: SchemaTableColumn, options: Options): ZodSchemaResult {
     switch (column.type) {
       case 'string':
         return this.generateZodString(column)
@@ -352,7 +337,9 @@ export class DatabaseClient {
       case 'boolean':
         return this.generateZodBoolean(column)
       case 'date':
-        return options.safety ? this.generateZodDateISO(column) : this.generateZodDate(column)
+        return options.useISODateFormat
+          ? this.generateZodDateISO(column)
+          : this.generateZodDate(column)
       case 'reference':
         return z.string()
       case 'array':
@@ -364,20 +351,20 @@ export class DatabaseClient {
     }
   }
 
-  generateZodSchema(props: DatabaseClientFnProps, options: Options): GenerateZodSchemaResult {
+  generateZodSchema(props: SchemaDatabaseTableProps, options: Options): GenerateZodSchemaResult {
     const columns = this.getTableColumns(props)
-      .map<[string, GenerateZodResult]>((column) => {
-        return [column.name, this.setMeta(this.generateZod(column, options), column)]
+      .map<[string, ZodSchemaResult]>((column) => {
+        return [column.name, this.setMeta(this.generateZodSchemaForColumn(column, options), column)]
       })
       .value()
     return z.object(Object.fromEntries(columns))
   }
 
-  generateZodJSON(props: DatabaseClientFnProps): z.core.JSONSchema.BaseSchema {
+  generateZodJSON(props: SchemaDatabaseTableProps): z.core.JSONSchema.BaseSchema {
     try {
       const table = this.getTable(props).value()
       return z.toJSONSchema(
-        this.generateZodSchema(props, { safety: true }).meta({
+        this.generateZodSchema(props, { useISODateFormat: true }).meta({
           title: table.name,
           description: table.description
         })
@@ -387,7 +374,7 @@ export class DatabaseClient {
     }
   }
 
-  private findDefaultValues(column: SchemaTableColumn): TypeOfGenerateZodType {
+  private findDefaultValues(column: SchemaTableColumn): ZodGeneratedType {
     switch (column.type) {
       case 'array':
         return []
@@ -399,9 +386,9 @@ export class DatabaseClient {
         return column.validation?.defaultValue ?? false
       case 'object':
         return Object.fromEntries(
-          column.validation.columns.map<[string, TypeOfGenerateZodTypeBase]>((column) => [
+          column.validation.columns.map<[string, ZodGeneratedTypePrimitive]>((column) => [
             column.name,
-            this.findDefaultValues(column) as TypeOfGenerateZodTypeBase
+            this.findDefaultValues(column) as ZodGeneratedTypePrimitive
           ])
         )
       case 'date':
@@ -415,12 +402,12 @@ export class DatabaseClient {
     }
   }
 
-  getDefaultValues(props: DatabaseClientFnProps): Record<string, TypeOfGenerateZodType> {
+  getDefaultValues(props: SchemaDatabaseTableProps): Record<string, ZodGeneratedType> {
     return Object.fromEntries(
       this.getTableColumns(props)
-        .map<[string, TypeOfGenerateZodType]>((prop) => [
+        .map<[string, ZodGeneratedType]>((prop) => [
           prop.name,
-          this.generateZodSchema(props, {}) as unknown as TypeOfGenerateZodType
+          this.generateZodSchema(props, {}) as unknown as ZodGeneratedType
         ])
         .value()
     )
