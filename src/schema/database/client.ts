@@ -65,7 +65,7 @@ export type GenerateZodResult =
 
 type GenerateZodSchemaResult = z.ZodObject<Record<string, GenerateZodResult>>
 
-interface DatabaseClientFnProps {
+export interface DatabaseClientFnProps {
   databaseId: string
   tableId: string
 }
@@ -89,6 +89,10 @@ export class DatabaseClient {
           }))
           .value()
       }))
+  }
+
+  setInstance(database: SchemaDatabaseStore): void {
+    this.instance = _.chain(database)
   }
 
   getTables({

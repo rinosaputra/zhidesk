@@ -1,5 +1,5 @@
 import { SchemaDatabaseStore } from '@schema/database'
-import { DatabaseClient } from '@schema/database/client'
+import { DatabaseClient, DatabaseClientFnProps } from '@schema/database/client'
 import { createLowDB, CreateLowDBProps, LowWithLodash, pathDefaultLowDB } from '@service/libs/lowdb'
 import _ from 'lodash'
 
@@ -22,11 +22,10 @@ export class DatabaseService {
       filename: 'database'
     },
     tables: {}
-
   }
   private databases: Databases | null = null
   private tables: Record<string, Table> = {}
-  private schema: DatabaseClient | null = null
+  private schema: DatabaseClient = new DatabaseClient([])
 
   constructor(props: Partial<Partial<CreateLowDBProps<SchemaDatabaseStore>>>) {
     this.initializeDatabases(props)
@@ -42,26 +41,30 @@ export class DatabaseService {
       this.databases = createLowDB(this.props.database)
       this.databases.read()
       if (props.defaultValue) this.databases.write()
-      this.schema = new DatabaseClient(this.databases)
+      this.schema.setInstance(this.databases.data)
       return this.databases
     } catch (error) {
       throw new Error((error as Error).message)
     }
   }
 
-  getDatabase(databaseId: string): _.ObjectChain<SchemaDatabaseStore[string]> {
+  getDatabase({
+    databaseId
+  }: Pick<DatabaseClientFnProps, 'databaseId'>): _.ObjectChain<SchemaDatabaseStore[string]> {
     if (!this.databases) throw new Error(`Database not initialize`)
     const database = this.databases.chain.get(databaseId)
     if (database.isUndefined()) throw new Error(`Database not found`)
     return database
   }
 
-  getTableSchema(tableId: string): Table {
-    const table = this.databases
-    return table
+  getTableSchema(props: DatabaseClientFnProps): ReturnType<DatabaseClient['generateZodSchema']> {
+    return this.schema.generateZodSchema(props, {})
   }
 
-  initializeTable(tableId: string, defaultValue?: RecordAny): Table {
+  initializeTable(
+    { tableId }: Pick<DatabaseClientFnProps, 'tableId'>,
+    defaultValue?: RecordAny
+  ): Table {
     try {
       if (this.tables[tableId]) return this.tables[tableId]
       this.props.tables[tableId] = {
@@ -79,8 +82,8 @@ export class DatabaseService {
     }
   }
 
-  getTable(tableId: string): Table {
-    const table = this.initializeTable(tableId)
+  getTable(props: DatabaseClientFnProps): Table {
+    const table = this.initializeTable(props)
     return table
   }
 }
