@@ -1,7 +1,7 @@
 // File: src/service/orpc/router.ts
 import { os } from '@orpc/server'
 import * as z from 'zod'
-import { databaseRouter } from '@service/database/router'
+import { databaseRouter } from '@service/database-v1/router'
 import { aiRouter } from '@service/ai/router'
 
 // Inisialisasi DocGenerator

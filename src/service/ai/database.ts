@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // File: src/service/ai/database.ts
 import { AIGenerator } from './generator'
-import { DatabaseService } from '../database/service'
-import { Table, DocumentData, Database } from '../database/types'
+import { DatabaseService } from '../database-v1/service'
+import { Table, DocumentData, Database } from '../database-v1/types'
 import { z } from 'zod'
 import { GenerateTableSchemaInput, ValidateApiKeyOutput } from './types'
-import { DatabaseUtils } from '@service/database/utils'
+import { DatabaseUtils } from '@service/database-v1/utils'
 import { readFileSync } from 'fs'
 import { ModelMessage } from 'ai'
 
