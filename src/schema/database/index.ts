@@ -1,12 +1,13 @@
 // File: src/schema/database/index.ts
 import z from 'zod'
 import { v4 as uuid } from 'uuid'
+import { nanoid } from 'nanoid'
 
 export const SchemaCore = z.object({
   _id: z
     .string()
     .describe('Unique identifier for the document default uuid()')
-    .default(() => uuid()),
+    .default(() => nanoid(6)),
   _createdAt: z
     .date()
     .describe('Timestamp when the document was created')
@@ -22,8 +23,15 @@ export type SchemaCore = z.infer<typeof SchemaCore>
 
 export type OmitSchemaCore<T extends SchemaCore> = Omit<T, keyof SchemaCore> & Partial<SchemaCore>
 
-export const getSchemaCore = (): SchemaCore => ({
-  _id: uuid(),
+export const getSchemaCore = (
+  _id:
+    | string
+    | {
+        asUUID?: boolean
+        length?: number
+      }
+): SchemaCore => ({
+  _id: typeof _id === 'string' ? _id : _id.asUUID ? uuid() : nanoid(_id.length ?? 6),
   _createdAt: new Date(),
   _updatedAt: new Date()
 })
@@ -397,8 +405,8 @@ export type TableSortDirection = keyof typeof TableSortDirection
 export type TableQuery = {
   filter: Record<string, Partial<TableFilterCondition>>
   sort: Record<string, TableSortDirection>
-  limit: number
-  offset: number
+  take: number
+  skip: number
 }
 
 export const TableResponse = z.object({
@@ -406,7 +414,8 @@ export const TableResponse = z.object({
   total: z.number(),
   limit: z.number(),
   offset: z.number(),
-  hasMore: z.boolean()
+  hasMore: z.boolean(),
+  extends: z.any().optional()
 })
 
 export type TableResponse = z.infer<typeof TableResponse>

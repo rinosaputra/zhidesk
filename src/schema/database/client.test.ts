@@ -16,18 +16,18 @@ import { getSchemaCore } from './index'
 
 // Mock data untuk testing
 const createMockDatabase = (): SchemaDatabase => ({
-  ...getSchemaCore(),
+  ...getSchemaCore({}),
   name: 'Test DB',
   description: 'A test database',
   version: 1,
   tables: [
     {
-      ...getSchemaCore(),
+      ...getSchemaCore({}),
       name: 'users',
       description: 'Users table',
       columns: [
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'name',
           description: 'User name',
           isNullable: false,
@@ -40,7 +40,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           }
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'email',
           description: 'User email',
           isNullable: false,
@@ -51,7 +51,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           }
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'age',
           description: 'User age',
           isNullable: true,
@@ -64,7 +64,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           }
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'role',
           description: 'User role',
           isNullable: false,
@@ -80,7 +80,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           }
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'isVerified',
           description: 'Is user verified',
           isNullable: false,
@@ -91,7 +91,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           }
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'birthDate',
           description: 'User birth date',
           isNullable: true,
@@ -102,7 +102,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           }
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'tags',
           description: 'User tags',
           isNullable: false,
@@ -112,7 +112,7 @@ const createMockDatabase = (): SchemaDatabase => ({
             min: 1,
             max: 10,
             column: {
-              ...getSchemaCore(),
+              ...getSchemaCore({}),
               name: 'tag',
               description: 'Individual tag',
               isNullable: false,
@@ -123,7 +123,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           }
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'address',
           description: 'User address',
           isNullable: false,
@@ -132,7 +132,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           validation: {
             columns: [
               {
-                ...getSchemaCore(),
+                ...getSchemaCore({}),
                 name: 'street',
                 description: 'Street address',
                 isNullable: false,
@@ -140,7 +140,7 @@ const createMockDatabase = (): SchemaDatabase => ({
                 type: 'string'
               },
               {
-                ...getSchemaCore(),
+                ...getSchemaCore({}),
                 name: 'city',
                 description: 'City name',
                 isNullable: false,
@@ -148,7 +148,7 @@ const createMockDatabase = (): SchemaDatabase => ({
                 type: 'string'
               },
               {
-                ...getSchemaCore(),
+                ...getSchemaCore({}),
                 name: 'zipCode',
                 description: 'Zip code',
                 isNullable: false,
@@ -162,12 +162,12 @@ const createMockDatabase = (): SchemaDatabase => ({
       ]
     },
     {
-      ...getSchemaCore(),
+      ...getSchemaCore({}),
       name: 'posts',
       description: 'Posts table',
       columns: [
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'title',
           description: 'Post title',
           isNullable: false,
@@ -176,7 +176,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           validation: { min: 5, max: 100 }
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'content',
           description: 'Post content',
           isNullable: false,
@@ -185,7 +185,7 @@ const createMockDatabase = (): SchemaDatabase => ({
           validation: { min: 10 }
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore({}),
           name: 'authorId',
           description: 'Reference to author',
           isNullable: false,
@@ -264,7 +264,7 @@ describe('DatabaseClient', () => {
   describe('generateZodString', () => {
     it('should generate a zod string schema with min validation', () => {
       const column: SchemaColumnString = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'username',
         description: 'Username',
         isNullable: false,
@@ -281,7 +281,7 @@ describe('DatabaseClient', () => {
 
     it('should generate a zod email schema', () => {
       const column: SchemaColumnString = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'email',
         description: 'Email',
         isNullable: false,
@@ -297,7 +297,7 @@ describe('DatabaseClient', () => {
 
     it('should generate a zod uuid schema', () => {
       const column: SchemaColumnString = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'uuid',
         description: 'UUID',
         isNullable: false,
@@ -313,7 +313,7 @@ describe('DatabaseClient', () => {
 
     it('should handle nullable and optional strings', () => {
       const column: SchemaColumnString = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'optionalField',
         description: 'Optional field',
         isNullable: true,
@@ -327,7 +327,7 @@ describe('DatabaseClient', () => {
 
     it('should handle string with default value', () => {
       const column: SchemaColumnString = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'status',
         description: 'Status',
         isNullable: false,
@@ -347,7 +347,7 @@ describe('DatabaseClient', () => {
   describe('generateZodNumber', () => {
     it('should generate a zod number schema with min and max validation', () => {
       const column: SchemaColumnNumber = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'quantity',
         description: 'Quantity',
         isNullable: false,
@@ -364,7 +364,7 @@ describe('DatabaseClient', () => {
 
     it('should handle nullable and optional numbers', () => {
       const column: SchemaColumnNumber = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'score',
         description: 'Score',
         isNullable: true,
@@ -381,7 +381,7 @@ describe('DatabaseClient', () => {
   describe('generateZodEnum', () => {
     it('should generate a zod enum schema from options', () => {
       const column: SchemaColumnEnum = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'status',
         description: 'Status',
         isNullable: false,
@@ -402,7 +402,7 @@ describe('DatabaseClient', () => {
 
     it('should handle enum with default value', () => {
       const column: SchemaColumnEnum = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'role',
         description: 'Role',
         isNullable: false,
@@ -428,7 +428,7 @@ describe('DatabaseClient', () => {
   describe('generateZodBoolean', () => {
     it('should generate a zod boolean schema', () => {
       const column: SchemaColumnBoolean = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'isActive',
         description: 'Is active',
         isNullable: false,
@@ -443,7 +443,7 @@ describe('DatabaseClient', () => {
 
     it('should handle boolean with default value', () => {
       const column: SchemaColumnBoolean = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'verified',
         description: 'Verified',
         isNullable: false,
@@ -463,7 +463,7 @@ describe('DatabaseClient', () => {
   describe('generateZodDate', () => {
     it('should generate a zod date schema with past constraint', () => {
       const column: SchemaColumnDate = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'birthDate',
         description: 'Birth date',
         isNullable: false,
@@ -482,7 +482,7 @@ describe('DatabaseClient', () => {
   describe('generateZodArray', () => {
     it('should generate a zod array schema', () => {
       const column: SchemaColumnArray = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'tags',
         description: 'Tags',
         isNullable: false,
@@ -492,7 +492,7 @@ describe('DatabaseClient', () => {
           min: 1,
           max: 5,
           column: {
-            ...getSchemaCore(),
+            ...getSchemaCore({}),
             name: 'tag',
             description: 'Tag',
             isNullable: false,
@@ -513,7 +513,7 @@ describe('DatabaseClient', () => {
   describe('generateZodObject', () => {
     it('should generate a zod object schema', () => {
       const column: SchemaColumnObject = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'address',
         description: 'Address',
         isNullable: false,
@@ -522,7 +522,7 @@ describe('DatabaseClient', () => {
         validation: {
           columns: [
             {
-              ...getSchemaCore(),
+              ...getSchemaCore({}),
               name: 'street',
               description: 'Street',
               isNullable: false,
@@ -530,7 +530,7 @@ describe('DatabaseClient', () => {
               type: 'string'
             },
             {
-              ...getSchemaCore(),
+              ...getSchemaCore({}),
               name: 'city',
               description: 'City',
               isNullable: false,
@@ -691,7 +691,7 @@ describe('DatabaseClient', () => {
   describe('setMeta', () => {
     it('should set metadata on zod schema', () => {
       const column: SchemaColumnString = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'testField',
         description: 'Test field description',
         isNullable: false,
@@ -708,7 +708,7 @@ describe('DatabaseClient', () => {
   describe('Error Handling', () => {
     it('should handle missing validation gracefully', () => {
       const column: SchemaColumnString = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'test',
         description: 'Test',
         isNullable: false,
@@ -722,7 +722,7 @@ describe('DatabaseClient', () => {
 
     it('should handle empty enum options', () => {
       const column: SchemaColumnEnum = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'emptyEnum',
         description: 'Empty enum',
         isNullable: false,

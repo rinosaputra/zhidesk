@@ -15,18 +15,18 @@ import { format } from 'date-fns'
 import z from 'zod'
 
 const createMockDb = (): SchemaDatabase => ({
-  ...getSchemaCore(),
+  ...getSchemaCore({}),
   name: 'Test DB',
   description: 'A test database',
   version: 1,
   tables: [
     {
-      ...getSchemaCore(),
+      ...getSchemaCore({}),
       name: 'users',
       description: 'Users table',
       columns: [
         {
-          ...getSchemaCore(),
+          ...getSchemaCore('name'),
           name: 'name',
           description: 'User name',
           isNullable: false,
@@ -34,7 +34,7 @@ const createMockDb = (): SchemaDatabase => ({
           type: 'string'
         },
         {
-          ...getSchemaCore(),
+          ...getSchemaCore('age'),
           name: 'age',
           description: 'User age',
           isNullable: false,
@@ -49,7 +49,6 @@ const createMockDb = (): SchemaDatabase => ({
 describe('DatabaseService', () => {
   let service: DatabaseService
   let mockDb: SchemaDatabase
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockDbStore: any // Using 'any' for easier test setup
 
   beforeEach(() => {
@@ -168,12 +167,12 @@ describe('DatabaseService', () => {
 
     it('should create a new table in a database', async () => {
       const newTable: SchemaTable = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'products',
         description: 'Products table',
         columns: [
           {
-            ...getSchemaCore(),
+            ...getSchemaCore({}),
             name: 'price',
             description: 'Product price',
             type: 'number',
@@ -229,7 +228,7 @@ describe('DatabaseService', () => {
     it('should add a new column to a table schema (alter)', async () => {
       const tableId = mockDb.tables[0]._id
       const newColumn: SchemaTableColumn = {
-        ...getSchemaCore(),
+        ...getSchemaCore({}),
         name: 'email',
         description: 'User email',
         type: 'string',
@@ -335,13 +334,11 @@ describe('DatabaseService', () => {
         .getDatabaseInstance({ databaseId: mockDb._id })
         .get(['tables', tableId, 'columns'])
         .value()
-      const name = service.getColumnIdByName({ databaseId: mockDb._id, tableId }, 'name')
-      const age = service.getColumnIdByName({ databaseId: mockDb._id, tableId }, 'age')
       const filterBody: TableQuery['filter'] = {
-        [name]: {
+        name: {
           equals: 'John'
         },
-        [age]: {
+        age: {
           greaterThan: 30
         }
       }
@@ -349,10 +346,10 @@ describe('DatabaseService', () => {
       const filterQuery = service.buildFilterQuery(filterBody, columns)
 
       expect(filterQuery).toHaveLength(2)
-      expect(filterQuery[0].key).toBe(name)
+      expect(filterQuery[0].key).toBe('name')
       expect(filterQuery[0].column.name).toBe('name')
       expect(filterQuery[0].conditions[0]).toEqual({ key: 'equals', value: 'John' })
-      expect(filterQuery[1].key).toBe(age)
+      expect(filterQuery[1].key).toBe('age')
       expect(filterQuery[1].column.name).toBe('age')
       expect(filterQuery[1].conditions[0]).toEqual({ key: 'greaterThan', value: 30 })
     })
@@ -364,25 +361,21 @@ describe('DatabaseService', () => {
         .get(['tables', tableId, 'columns'])
         .value()
 
-      const name = service.getColumnIdByName({ databaseId: mockDb._id, tableId }, 'name')
-      const age = service.getColumnIdByName({ databaseId: mockDb._id, tableId }, 'age')
       const sortBody = {
-        [age]: 'desc' as const,
-        [name]: 'asc' as const
+        age: 'desc' as const,
+        name: 'asc' as const
       }
 
       const sortQuery = service.buildSortQuery(sortBody, columns)
-
       expect(sortQuery).toHaveLength(2)
-      expect(sortQuery[0].key).toBe(age)
+      expect(sortQuery[0].key).toBe('age')
       expect(sortQuery[0].direction).toBe('desc')
-      expect(sortQuery[1].key).toBe(name)
+      expect(sortQuery[1].key).toBe('name')
       expect(sortQuery[1].direction).toBe('asc')
     })
 
     it('should query table records with filtering, sorting, and pagination', () => {
       const props = { tableId: mockDb.tables[0]._id, databaseId: mockDb._id }
-      const age = service.getColumnIdByName(props, 'age')
       const rows = {
         '1': { name: 'Alice', age: 25 },
         '2': { name: 'Bob', age: 35 },
@@ -395,13 +388,15 @@ describe('DatabaseService', () => {
         props,
         body: {
           filter: {
-            [age]: { greaterThan: 28 }
+            age: {
+              greaterThan: 28
+            }
           },
           sort: {
-            [age]: 'asc'
+            age: 'asc'
           },
-          limit: 2,
-          offset: 0
+          skip: 0,
+          take: 2
         }
       }
 
@@ -424,7 +419,7 @@ describe('DatabaseService', () => {
 
       const query: BuildSchemaTable<SchemaDatabaseTableProps, TableQuery> = {
         props,
-        body: { filter: {}, sort: {}, limit: 10, offset: 0 }
+        body: { filter: {}, sort: {}, take: 10, skip: 0 }
       }
 
       const result = service.queryTableRecords(query)
